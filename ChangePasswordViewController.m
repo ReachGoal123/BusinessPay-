@@ -1,0 +1,123 @@
+//
+//  ChangePasswordViewController.m
+//  BusinessPay
+//
+//  Created by Tears on 14-4-15.
+//  Copyright (c) 2014年 Tears. All rights reserved.
+//
+
+#import "ChangePasswordViewController.h"
+#import "LoginViewController.h"
+
+
+@interface ChangePasswordViewController ()
+@property (weak, nonatomic) IBOutlet UITextField *oldPassword;
+@property (weak, nonatomic) IBOutlet UITextField *confirmPassword;
+@property (weak, nonatomic ,getter=thenewPassvords) IBOutlet UITextField *newPassvords;
+@property (strong,nonatomic) LoginViewController *loginVC;
+
+- (IBAction)tapAction:(UITapGestureRecognizer *)sender;
+
+- (IBAction)changePasswordAction:(id)sender;
+@end
+
+@implementation ChangePasswordViewController
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    _loginVC=[[LoginViewController alloc] init];
+    
+    [self performSelector:@selector(textFieldbecomeFirstResponder:) withObject:self.oldPassword afterDelay:kDelayTime];
+    self.navigationItem.titleView = [[UILabel alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 120.0f, 50.0f)];
+    UILabel *  lable = (UILabel *)self.navigationItem.titleView ;
+    [lable setText:@"修改密码"];
+    lable.font = [UIFont boldSystemFontOfSize:20];
+    [lable setTextColor:[UIColor whiteColor]];
+    [lable setTextAlignment:NSTextAlignmentCenter];
+}
+
+//-(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+//{
+//    if ([segue.identifier isEqualToString:@"toLoginSegue"]) {
+//        
+//    }
+//}
+
+
+- (IBAction)tapAction:(UITapGestureRecognizer *)sender {
+    [self.view endEditing:YES];
+}
+
+- (IBAction)changePasswordAction:(id)sender
+{
+    if (self.oldPassword.text.length == kTextLengthZero) {
+        [self showWarmingWithMessage:@"请输入旧密码"];
+        return;
+    }
+    
+    
+    if (![self.newPassvords.text isEqualToString:self.confirmPassword.text]) {
+        [self showWarmingWithMessage:@"密码不一致"];
+        return;
+    }
+    ChangePasswordDO * changePasswordDO = [[ChangePasswordDO alloc] init];
+    changePasswordDO.oldPassword = self.oldPassword.text;
+    changePasswordDO.phoneNumber = [User shareUser].phoneNumber;
+    changePasswordDO.passWordnew = self.newPassvords.text;
+    changePasswordDO.trancode    = kTrancode_ChangePassword;
+    changePasswordDO.delegate    = self;
+    [UIComponentService showHudWithStatus:kPleaseWait];
+    [changePasswordDO changePasswordRequest];
+}
+
+- (void)changePasswordSuccessWithMessage:(NSString *)message
+{
+    [UIComponentService showSuccessHudWithStatus:@"修改成功,请重新登录"];
+//    [_loginVC savePhoneNumber:nil andPassword:nil];
+//    
+//    [self performSegueWithIdentifier:@"toLoginSegue" sender:self];
+    [[NSUserDefaults standardUserDefaults] setObject:self.newPassvords.text forKey:@"password"];
+    
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    [self.navigationController popToRootViewControllerAnimated:YES];
+}
+
+- (void)changePasswordFieldWithMessage:(NSString *)message
+{
+    [UIComponentService showFailHudWithStatus:message];
+}
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string;
+{
+    if ([string isEqualToString:@"\n"])
+    {
+        return YES;
+    }
+    NSString * toBeString = [textField.text stringByReplacingCharactersInRange:range withString:string];
+    
+    if (self.oldPassword == textField)
+    {
+        if ([toBeString length] > 15) {
+            textField.text = [toBeString substringToIndex:15];
+            return NO;
+        }
+    }
+    if (self.confirmPassword == textField)
+    {
+        if ([toBeString length] > 15) {
+            textField.text = [toBeString substringToIndex:15];
+            return NO;
+        }
+    }
+    if (self.newPassvords == textField)
+    {
+        if ([toBeString length] > 15) {
+            textField.text = [toBeString substringToIndex:15];
+            return NO;
+        }
+    }
+    return YES;
+}
+
+@end

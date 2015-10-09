@@ -1,0 +1,88 @@
+//
+//  ManagementViewController.m
+//  BusinessPay
+//
+//  Created by zm on 28/4/15.
+//  Copyright (c) 2015年 Tears. All rights reserved.
+//
+
+#import "ManagementViewController.h"
+
+@interface ManagementViewController ()
+
+@end
+
+@implementation ManagementViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    self.view.backgroundColor = [UIColor colorWithRed:249/255.f green:248/255.f blue:248/255.f alpha:1];
+
+//    self.view.background
+    self.navigationItem.titleView = [[UILabel alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 120.0f, 50.0f)];
+    UILabel *  lable = (UILabel *)self.navigationItem.titleView ;
+    [lable setText:@"代理管理"];
+    lable.font = [UIFont boldSystemFontOfSize:20];
+    [lable setTextColor:[UIColor whiteColor]];
+    [lable setTextAlignment:NSTextAlignmentCenter];
+    
+    _nAgment.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;  //button 字体左对齐
+    _nAgment.titleEdgeInsets = UIEdgeInsetsMake(0, 10, 0, 0);
+    
+    _agmentmanagement.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;  //button 字体左对齐
+    _agmentmanagement.titleEdgeInsets = UIEdgeInsetsMake(0, 10, 0, 0);
+    
+    _activCode.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;  //button 字体左对齐
+    _activCode.titleEdgeInsets = UIEdgeInsetsMake(0, 10, 0, 0);
+    
+}
+
+
+-(IBAction)nAmentAction:(id)sender{
+    
+    
+
+}
+
+
+//点击代理商管理
+-(IBAction)managementAction:(id)sender{
+    
+    User *user = [User shareUser];
+    childAgentQuery *childquery = [[childAgentQuery alloc]init];
+    childquery.delegate = self;
+    
+    childquery.trancode = @"701192";
+    childquery.LoginPhoneNum = user.phoneNumber;
+    childquery.currentAgentNumber = user.agentNumber;
+    [childquery childAgentQueryRequest];
+    
+}
+
+- (void)childAgentQuerySuccessWithMessage: (NSString *)message{
+    
+    NSLog(@"childAgentQuerySuccessWithMessage-message-----%@",message);
+}
+
+- (void)childAgentQueryFildWithMessage: (NSString *)message{
+    NSLog(@"childAgentQueryFildWithMessage-message-----%@",message);
+    
+}
+
+
+//点击激活码管理
+-(IBAction)activCodeAction:(id)sender{
+    
+    User *user = [User shareUser];
+    ActivationCodeManagement *activatcode = [[ActivationCodeManagement alloc]init];
+    activatcode.delegate = self;
+    
+    activatcode.trancode = @"701194";
+    activatcode.LoginPhoneNum = user.phoneNumber;
+    activatcode.currentAgentNumber = user.agentNumber;
+    [activatcode ActivationCodeManagementRequest];
+
+}
+
+@end

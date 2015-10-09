@@ -1,0 +1,26 @@
+//
+//  ManagementViewController.h
+//  BusinessPay
+//
+//  Created by zm on 28/4/15.
+//  Copyright (c) 2015年 Tears. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+#import "childAgentQuery.h"
+#import "ActivationCodeManagement.h"
+
+@interface ManagementViewController : UIViewController<childAgentQueryDelegate,ActivationCodeManagementDelegate>
+
+@property(strong, nonatomic)IBOutlet UIButton *nAgment;  //新建代理商
+
+@property(strong, nonatomic)IBOutlet UIButton *agmentmanagement;  //代理商管理
+
+@property(strong, nonatomic)IBOutlet UIButton *activCode;  //激活码管理
+
+-(IBAction)nAmentAction:(id)sender;
+
+-(IBAction)managementAction:(id)sender;
+
+-(IBAction)activCodeAction:(id)sender;
+@end

@@ -1,0 +1,109 @@
+//
+//  User.m
+//  BusinessPay
+//
+//  Created by Tears on 14-4-8.
+//  Copyright (c) 2014年 Tears. All rights reserved.
+//
+
+#import "User.h"
+
+#import "XOR.h"
+#import "MyMD5.h"
+#import "AESCrypt.h"
+#import "BaseModel.h"
+
+@implementation User
+
+static User * user;
+
++ (User *)shareUser
+{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        user=[[self alloc] init];
+    });
+    return user;
+}
+
+- (NSString *)encrypt:(NSMutableDictionary *)xmlDic
+{
+    NSString * xmlStr = [BaseModel XMLStringFromDic:xmlDic];
+
+    //NSString * acrStr = [BaseModel randomString];//自动生成一个random A
+
+    // 1.getkey
+    //NSString * key = [MyMD5 md5Base64:acrStr];
+    
+    // 2.getkey2
+    //NSString * key2 = [XOR XOREncrypt:acrStr];
+    
+    // 3.getMACString
+    NSString * MACString = [MyMD5 md5UTF8:xmlStr];
+    
+    // 4.spliceXMLString
+    NSString * MACValue =[@"<PACKAGEMAC>" stringByAppendingFormat:@"%@%@",MACString,@"</PACKAGEMAC>"];
+    NSString * tempStr = @"</EPOSPROTOCOL>";
+    NSString * xmlStrLeft = [xmlStr substringToIndex:xmlStr.length- tempStr.length];
+    xmlStr = [xmlStrLeft stringByAppendingFormat:@"%@%@",MACValue,tempStr];
+    
+    // 5.AES
+    //key = [[MyMD5 md5UTF8:key] substringToIndex:16];   //key is D
+    
+    //NSString * test_String  = [AESCrypt encrypt:xmlStr andKey:key];
+    
+    // 6.spliceRequestParamValue
+    //NSString * requestParamValue = [key2 stringByAppendingString:test_String];
+
+    return xmlStr;
+    //return requestParamValue;
+}
+
+//- (NSString *)realNameEncrypt:(NSMutableDictionary *)xmlDic
+//{
+//    NSString * xmlStr = [BaseModel XMLStringFromDic:xmlDic];
+//    
+//    NSString * acrStr = [BaseModel randomString];
+//    
+//    // 1.getkey
+//    NSString * key = [MyMD5 md5Base64:acrStr];
+//    
+//    // 2.getkey2
+//    NSString * key2 = [XOR XOREncrypt:acrStr];
+//    
+//    // 3.getMACString
+//    NSString * MACString = [MyMD5 md5UTF8:xmlStr];
+//    
+//    // 4.spliceXMLString
+//    NSString * MACValue =[@"<PACKAGEMAC>" stringByAppendingFormat:@"%@%@",MACString,@"</PACKAGEMAC>"];
+//    NSString * tempStr = @"</EPOSPROTOCOL>";
+//    NSString * xmlStrLeft = [xmlStr substringToIndex:xmlStr.length- tempStr.length];
+//    xmlStr = [xmlStrLeft stringByAppendingFormat:@"%@%@",MACValue,tempStr];
+//    
+////    // 5.AES
+////    key = [[MyMD5 md5UTF8:key] substringToIndex:16];
+////    
+////    NSString * test_String  = [AESCrypt encrypt:xmlStr andKey:key];
+//    
+//    // 6.spliceRequestParamValue
+//    NSString * requestParamValue = [key2 stringByAppendingString:xmlStr];
+//    
+//    return requestParamValue;
+//}
+
+
+
+- (NSString *)decrypt:(NSString *)responseString
+{
+    NSString * key = [[MyMD5 md5Crypte] substringToIndex:16];
+    
+    NSString * responseXMLStr  = [AESCrypt decrypt:responseString andKey:key];
+    
+    if (responseXMLStr.length == kTextLengthZero) {
+        responseXMLStr = @"<?xml version=\"1.0\" encoding=\"UTF-8\"?><EPOSPROTOCOL><RSPCOD>383838</RSPCOD><RSPMSG>连接服务器失败</RSPMSG></EPOSPROTOCOL>";
+    }
+    
+    return responseXMLStr;
+}
+
+@end

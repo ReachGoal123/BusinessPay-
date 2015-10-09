@@ -1,0 +1,13 @@
+//
+//  CityDO.m
+//  BusinessPay
+//
+//  Created by Tears on 14-4-12.
+//  Copyright (c) 2014年 Tears. All rights reserved.
+//
+
+#import "CityDO.h"
+
+@implementation CityDO
+
+@end

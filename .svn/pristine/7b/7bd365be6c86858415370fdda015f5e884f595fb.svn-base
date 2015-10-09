@@ -1,0 +1,147 @@
+//
+//  StartViewController.m
+//  BusinessPay
+//
+//  Created by SHANGYITONG on 15-3-7.
+//  Copyright (c) 2015年 Tears. All rights reserved.
+//
+
+#import "StartViewController.h"
+#import "ARLabel.h"
+#import "PayPhonemoneyDO.h"
+
+@interface StartViewController ()
+@end
+
+@implementation StartViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+//    ARLabel *label=[[ARLabel alloc] initWithFrame:CGRectMake(120, 160, 50, 25)];
+//    //ARLabel *label=[[ARLabel alloc] initWithFrame:CGRectMake(182, 160, 50, 25)];
+//    label.text=@"您的移动财富";
+//    //R0 G31 B86
+//    label.backgroundColor=[UIColor colorWithRed:0/255.f green:31/255.f blue:86/255.f alpha:0.0];
+//    label.textColor=[UIColor whiteColor];
+//    
+//    label.enlargedSize = CGSizeMake(200, 100);
+//    
+//    [self.view addSubview:label];
+//    
+//    [UIView animateWithDuration:3.0
+//                          delay:0.0
+//                        options:UIViewAnimationOptionCurveEaseInOut
+//                     animations:^{
+//                         label.frame = CGRectMake(110, 160, 100, 50);
+//                     }
+//                     completion:nil];
+//
+
+    if (kSCREEN_WIDTH==414) {
+        
+        ARLabel *label=[[ARLabel alloc] initWithFrame:CGRectMake(182, 160, 50, 25)];
+        label.text=@"您的移动财富";
+        //R0 G31 B86
+        label.backgroundColor=[UIColor colorWithRed:0/255.f green:31/255.f blue:86/255.f alpha:0.0];
+        label.textColor=[UIColor whiteColor];
+        
+        label.enlargedSize = CGSizeMake(200, 100);
+        
+        [self.view addSubview:label];
+        
+        [UIView animateWithDuration:3.0
+                              delay:0.0
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:^{
+                             label.frame = CGRectMake(157, 160, 100, 50);
+                         }
+                         completion:nil];
+        
+        
+    }else if(kSCREEN_WIDTH==375)
+    {
+        ARLabel *label=[[ARLabel alloc] initWithFrame:CGRectMake(162.5, 160, 50, 25)];
+        label.text=@"您的移动财富";
+        //R0 G31 B86
+        label.backgroundColor=[UIColor colorWithRed:0/255.f green:31/255.f blue:86/255.f alpha:0.0];
+        label.textColor=[UIColor whiteColor];
+        
+        label.enlargedSize = CGSizeMake(200, 100);
+        
+        [self.view addSubview:label];
+        
+        [UIView animateWithDuration:3.0
+                              delay:0.0
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:^{
+                             label.frame = CGRectMake(137.5, 160, 100, 50);
+                         }
+                         completion:nil];
+    }
+    else
+    {
+        ARLabel *label=[[ARLabel alloc] initWithFrame:CGRectMake(120, 160, 50, 25)];
+        label.text=@"您的移动财富";
+        //R0 G31 B86
+        label.backgroundColor=[UIColor colorWithRed:0/255.f green:31/255.f blue:86/255.f alpha:0.0];
+        label.textColor=[UIColor whiteColor];
+        
+        label.enlargedSize = CGSizeMake(200, 100);
+        
+        [self.view addSubview:label];
+        
+        [UIView animateWithDuration:3.0
+                              delay:0.0
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:^{
+                             label.frame = CGRectMake(110, 160, 100, 50);
+                         }
+                         completion:nil];
+    }
+    
+    
+
+    
+    NSUserDefaults* ud = [NSUserDefaults standardUserDefaults];
+    //NSString * phoneNumber = [ud objectForKey:@"phoneNumber"];
+    //NSString * password=[ud objectForKey:@"password"];
+    NSString *psw=[ud objectForKey:@"lock"];
+        
+    
+    
+    if(psw==nil)
+    {
+        [self performSelector:@selector(presentToLoginVC) withObject:nil afterDelay:4.0f];
+
+        
+        
+    }else
+    {
+        [self performSelector:@selector(presentToLockVc) withObject:nil afterDelay:4.0f];
+    }
+    
+}
+
+
+- (void) presentToLockVc
+{
+    [self performSegueWithIdentifier:@"togesSegue" sender:self];
+}
+
+
+- (void) presentToLoginVC
+{
+    [self performSegueWithIdentifier:@"toLoginSegue" sender:self];
+}
+
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+
+
+
+@end

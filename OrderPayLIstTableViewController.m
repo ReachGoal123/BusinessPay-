@@ -1,0 +1,209 @@
+//
+//  OrderPayLIstTableViewController.m
+//  BusinessPay
+//
+//  Created by SHANGYITONG on 15-1-13.
+//  Copyright (c) 2015年 Tears. All rights reserved.
+//
+
+#import "OrderPayLIstTableViewController.h"
+#import "OrderDetailViewController.h"
+#import "AnotherPayViewController.h"
+
+#import "OrderListTableViewCell.h"
+
+
+@interface OrderPayLIstTableViewController()
+{
+    OrderPayInquiryDO *_orderDO;
+    OrderPayInquiryDO * orderInquiryDO;
+}
+
+@end
+
+@implementation OrderPayLIstTableViewController
+
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    //NSLog(@"prepareForSegue");
+    if ([segue.identifier isEqualToString:@"orderDetailSegue"]) {
+        OrderDetailViewController * orderDetailVC =(OrderDetailViewController *)segue.destinationViewController;
+        orderDetailVC.orderDO = _orderDO;
+    }else if([segue.identifier isEqualToString:@"paytoanother"]){
+        AnotherPayViewController *anotherPayVC=(AnotherPayViewController *)segue.destinationViewController;
+        anotherPayVC.link=self.orderPayDO.reURL;
+    }
+}
+
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    _orderPayDO=[[OrderPayDO alloc] init];
+    self.tableView.backgroundView = nil;
+    self.view.backgroundColor = [UIColor colorWithPatternImage:[UIImage imageNamed:@"background"]];
+    UIView * view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, kSCREEN_WIDTH, 10)];
+    view.backgroundColor = [UIColor clearColor];
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    [self.tableView setTableFooterView:view];
+    
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]initWithTitle:@"返回" style:UIBarButtonItemStyleBordered target:self action:@selector(backup)];
+    
+    self.navigationItem.titleView = [[UILabel alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 120.0f, 50.0f)];
+    UILabel *  lable = (UILabel *)self.navigationItem.titleView ;
+    [lable setText:@"充值记录"];
+    lable.font = [UIFont boldSystemFontOfSize:20];
+    [lable setTextColor:[UIColor whiteColor]];
+    [lable setTextAlignment:NSTextAlignmentCenter];
+    
+    
+    NSLog(@"datasourse=%lu",(unsigned long)self.dataSourceArr.count);
+}
+
+-(void)backup{
+    [self.navigationController popViewControllerAnimated:YES];
+}
+-(void)segmentControlValueChange:(id)sender
+{
+    if (self.segmentControl.selectedSegmentIndex==1) {
+        //[self performSelector:@selector(recordInquiry) withObject:nil afterDelay:0];
+        [self recordInquirys];
+        [self.tableView reloadData];
+    }else
+    {
+        [self.tableView reloadData];
+    }
+
+}
+
+- (void)recordInquirys
+{
+     orderInquiryDO = [[OrderPayInquiryDO alloc] init];
+    //orderInquiryDO.delegate         = self;
+    orderInquiryDO.trancode         = @"701622";
+    
+    orderInquiryDO.phoneNumber      = [User shareUser].phoneNumber;
+    orderInquiryDO.currentPage      = kInquiryCurrentPage;
+    orderInquiryDO.accountPerPage   = kInquiryNumber;
+    orderInquiryDO.startDataTime    = self.startTime;
+    orderInquiryDO.endDataTime      = self.endTime;
+    [orderInquiryDO orderListInquiryRequest];
+    
+    
+}
+
+
+-(void)orderPayRequest
+{
+    //=[[OrderPayDO alloc] init];
+    [_orderPayDO setDelegate:self];
+    _orderPayDO.phoneNumber=[User shareUser].phoneNumber;
+    _orderPayDO.trancode=kTrancode_OrderPay;
+    _orderPayDO.menchantNO=_orderDO.orderNum;
+    NSLog(@"orderNum=%@",_orderDO.orderNum);
+    _orderPayDO.urlType=@"1";
+    
+    [self.orderPayDO submitOrderRequest];
+}
+
+
+
+#pragma mark - Table view data source
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    if(self.segmentControl.selectedSegmentIndex==0)
+    {
+        return self.dataSourceArr.count;
+    }else
+    {
+        return orderInquiryDO.tempArr.count;
+    }
+    
+    //NSLog(@"datasourse=%i",self.dataSourceArr.count);
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    OrderListTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"Cell" forIndexPath:indexPath];
+    if(self.segmentControl.selectedSegmentIndex==0)
+    {
+        if (self.dataSourceArr.count ==0) {
+            [self showWarmingWithMessage:@"无交易数据"];
+        }else{
+    OrderPayInquiryDO * orderDO = [self.dataSourceArr objectAtIndex:indexPath.row];
+    
+    cell.statusLab.text         = [BaseModel statusString:orderDO.payStatus];
+    
+    float money = [orderDO.orderMoney integerValue]/100.f;
+    cell.moneyLab.text          = [NSString stringWithFormat:@"￥%.2f",money];
+    cell.payTimeLab.text        = [NSString stringWithFormat:@"%@-%@-%@",[orderDO.payTime substringWithRange:NSMakeRange(0,4)],[orderDO.payTime substringWithRange:NSMakeRange(4, 2)],[orderDO.payTime substringWithRange:NSMakeRange(6, 2)]];
+    cell.orderNumberLab.text    = orderDO.payOrderNumber;
+        }
+    }
+    else
+    {
+        
+        OrderPayInquiryDO * orderDO=[orderInquiryDO.tempArr objectAtIndex:indexPath.row];
+        cell.statusLab.text         = [BaseModel statusString:orderDO.payStatus];
+        
+        float money = [orderDO.txtamt integerValue]/100.f;
+        cell.moneyLab.text          = [NSString stringWithFormat:@"￥%.2f",money];
+        cell.payTimeLab.text        = [NSString stringWithFormat:@"%@-%@-%@",[orderDO.clsDate substringWithRange:NSMakeRange(0,4)],[orderDO.clsDate substringWithRange:NSMakeRange(4, 2)],[orderDO.clsDate substringWithRange:NSMakeRange(6, 2)]];
+        //cell.payTimeLab.text       =orderDO.payTime;
+        //NSString *orderNum=[orderDO.payOrderNumber substringFromIndex:11];
+        cell.orderNumberLab.text    = orderDO.payOrderNumber;
+        
+    }
+    
+    cell.backgroundColor = [UIColor clearColor];
+    cell.contentView.backgroundColor = [UIColor clearColor];
+    return cell;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    //    [self performSegueWithIdentifier:@"orderDetailSegue" sender:self];
+    
+    if(self.segmentControl.selectedSegmentIndex==0)
+    {
+        _orderDO = [self.dataSourceArr objectAtIndex:indexPath.row];
+
+        UIAlertView *alert = [[UIAlertView alloc]initWithTitle:@"功能选择" message:nil delegate:self cancelButtonTitle:@"退出"otherButtonTitles:@"付款", nil];
+       [alert show];
+    }else
+    {
+        return;
+    }
+}
+
+-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if(buttonIndex==0)
+    {
+        return;
+    }else if (buttonIndex==1)
+    {
+        [UIComponentService showHudWithStatus:kPleaseWait];
+        [self performSelector:@selector(orderPayRequest) withObject:nil afterDelay:kDelayTime];
+    }
+}
+
+
+-(void)orderPayScuessWithReurl:(NSString *)reurl andMessage:(NSString *)message
+{
+    [UIComponentService showSuccessHudWithStatus:@"请支付"];
+    [self performSegueWithIdentifier:@"paytoanother" sender:self];
+}
+
+-(void)orderPayFailWithMessage:(NSString *)message
+{
+    [UIComponentService showFailHudWithStatus:message];
+    
+}
+
+
+
+
+
+@end

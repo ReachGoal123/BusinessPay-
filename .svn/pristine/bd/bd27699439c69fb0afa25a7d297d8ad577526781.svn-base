@@ -1,0 +1,17 @@
+//
+//  AppDelegate.h
+//  BusinessPay
+//
+//  Created by Tears on 14-4-1.
+//  Copyright (c) 2014年 Tears. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+#import "BPush.h"
+
+@interface AppDelegate : UIResponder <UIApplicationDelegate,BPushDelegate,UIAlertViewDelegate>
+
+@property (strong, nonatomic) UIWindow *window;
+
+
+@end

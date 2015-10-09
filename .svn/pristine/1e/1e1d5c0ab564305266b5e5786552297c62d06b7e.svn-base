@@ -1,0 +1,138 @@
+//
+//  AccountDetailViewController.m
+//  BusinessPay
+//
+//  Created by SHANGYITONG on 14-12-24.
+//  Copyright (c) 2014年 Tears. All rights reserved.
+//
+
+#import "AccountDetailViewController.h"
+#import "WithDrawViewController.h"
+
+@implementation AccountDetailViewController
+
+-(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    if([segue.identifier isEqualToString:@"withDrawsegue"])
+    {
+        WithDrawViewController *withDrawVC=(WithDrawViewController *)segue.destinationViewController;
+     withDrawVC.accountDO=self.accountDO;
+    }
+}
+
+-(void)viewDidLoad
+{
+    [super viewDidLoad];
+    
+    self.tableView.dataSource=self;
+    self.tableView.delegate=self;
+    
+    self.navigationItem.rightBarButtonItem=[[UIBarButtonItem alloc] initWithTitle:@"账单" style:(UIBarButtonItemStyleDone) target:self action:@selector(buttonAction:)];
+    
+    _arrayImage=[[NSMutableArray alloc]initWithObjects:
+                            @"money",
+                            @"money",
+                            @"money",
+                            @"money",
+                            @"money",
+                            @"money",nil];
+    self.navigationItem.titleView = [[UILabel alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 120.0f, 50.0f)];
+    UILabel *  lable = (UILabel *)self.navigationItem.titleView ;
+    [lable setText:@"收益明细"];
+    lable.font = [UIFont boldSystemFontOfSize:20];
+    [lable setTextColor:[UIColor whiteColor]];
+    [lable setTextAlignment:NSTextAlignmentCenter];
+    
+}
+
+-(IBAction)clickButton:(id)sender
+{
+    //[self performSegueWithIdentifier:@"resetPayPasswordSuegue" sender:self];
+
+    [self performSegueWithIdentifier:@"withDrawsegue" sender:self];
+    
+}
+
+
+-(IBAction)buttonAction:(id)sender
+{
+    [self performSegueWithIdentifier:@"orderInquirySegue" sender:self];
+}
+
+#pragma mark - datasourse
+
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 5;
+}
+
+
+-(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return 1;
+}
+
+
+-(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:@"CELL" forIndexPath:indexPath];
+    
+    if (indexPath.section==0) {
+        
+        //cell.imageView.image=[UIImage imageNamed:[_arrayImage objectAtIndex:indexPath.section]];
+        cell.textLabel.text=@"账户总余额";
+        float money=[self.accountDO.totalAccount integerValue]/100.f;
+        
+        NSLog(@"%f",money);
+        cell.detailTextLabel.text=[NSString stringWithFormat:@"￥%.2f",money];
+        
+//        UIButton *btn=[[UIButton alloc] initWithFrame:CGRectMake(280, 10, 20, 10)];
+//        [btn setTitle:@"账单" forState:(UIControlStateNormal)];
+//        [btn addTarget:self action:@selector(buttonAction:) forControlEvents:(UIControlEventTouchUpInside)];
+//        
+//        [cell addSubview:btn];
+//        
+//         //cell.accessoryType=[[UIBarButtonItem alloc]initWithTitle:@"账单" style:(UIBarButtonItemStylePlain) target:self action:@selector(buttonAction:)];
+//        
+        
+    }
+    else if (indexPath.section==1)
+    {
+        //cell.imageView.image=[UIImage imageNamed:[_arrayImage objectAtIndex:indexPath.section]];
+        cell.textLabel.text=@"总收益";
+        float money=[self.accountDO.accumulatedIncome integerValue]/100.f;
+        cell.detailTextLabel.text=[NSString stringWithFormat:@"￥%.2f",money];
+    }else if (indexPath.section==2)
+    {
+        //cell.imageView.image=[UIImage imageNamed:[_arrayImage objectAtIndex:indexPath.section]];
+        cell.textLabel.text=@"昨日收益";
+        float money=[self.accountDO.yestedayIncome integerValue]/100.f;
+        cell.detailTextLabel.text=[NSString stringWithFormat:@"￥%.2f",money];
+    }else if (indexPath.section==3)
+    {
+        //cell.imageView.image=[UIImage imageNamed:[_arrayImage objectAtIndex:indexPath.section]];
+        cell.textLabel.text=@"近一周收益";
+        float money=[self.accountDO.weekIncome integerValue]/100.f;
+        cell.detailTextLabel.text=[NSString stringWithFormat:@"￥%.2f",money];
+    }
+    else
+    {
+        //cell.imageView.image=[UIImage imageNamed:[_arrayImage objectAtIndex:indexPath.section]];
+        cell.textLabel.text=@"近一月收益";
+        float money=[self.accountDO.monthIncome integerValue]/100.f;
+        cell.detailTextLabel.text=[NSString stringWithFormat:@"￥%.2f",money];
+    }
+    
+    return  cell;
+}
+
+
+-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+{
+    return 10;
+}
+
+
+
+@end

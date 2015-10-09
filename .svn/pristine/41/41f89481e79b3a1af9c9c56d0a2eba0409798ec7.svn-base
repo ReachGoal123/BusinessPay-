@@ -1,0 +1,123 @@
+//
+//  ActivCodeViewController.m
+//  BusinessPay
+//
+//  Created by zm on 29/4/15.
+//  Copyright (c) 2015年 Tears. All rights reserved.
+//
+
+#import "ActivCodeViewController.h"
+
+@interface ActivCodeViewController ()
+
+@end
+
+@implementation ActivCodeViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    _createCode.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;  //button 字体左对齐
+    _createCode.titleEdgeInsets = UIEdgeInsetsMake(0, 10, 0, 0);
+    
+    _transferCode.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;  //button 字体左对齐
+    _transferCode.titleEdgeInsets = UIEdgeInsetsMake(0, 10, 0, 0);
+}
+
+
+//点击激活码生产按钮
+-(IBAction)createCodeAction:(id)sender{
+
+    
+    _codeNumAlert = [[UIAlertView  alloc] initWithTitle:@"请选择生产激活码数量" message:nil delegate:self cancelButtonTitle:nil otherButtonTitles:@"1", @"2",@"3",@"4",@"5", nil];
+    [_codeNumAlert show];
+
+}
+
+-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    
+    if (alertView == self.codeNumAlert) {
+        int num = (int)buttonIndex;
+        
+        _CodeNum= [ NSString stringWithFormat:@"%d",(num+1) ];
+        
+        NSLog(@"_CodeNum---%@",_CodeNum);
+        
+        self.payPassWordAlert =[[UIAlertView alloc] initWithTitle:@"请输入支付密码" message:nil delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil];
+        _payPassWordField = [[UITextField alloc] init];
+        _payPassWordField.backgroundColor = [UIColor whiteColor];
+        _payPassWordField.frame = CGRectMake(self.payPassWordAlert.center.x+65,self.payPassWordAlert.center.y, 150,23);
+        self.payPassWordAlert.alertViewStyle = UIAlertViewStyleSecureTextInput;//看这里。。可以这样用
+        //[alert textFieldAtIndex:0].keyboardType = UIKeyboardTypeDefault;
+        [self.payPassWordAlert textFieldAtIndex:0].placeholder=@"请输入支付密码";
+        [self.payPassWordAlert textFieldAtIndex:0].keyboardType=UIKeyboardTypeNumberPad;
+        [self.payPassWordAlert textFieldAtIndex:0].delegate = self;
+        [self.payPassWordAlert addSubview:_payPassWordField];
+        [self.payPassWordAlert show];
+
+    }else if(alertView == self.payPassWordAlert){
+        
+        if (buttonIndex==1) {
+            NSString *payPassword=[alertView textFieldAtIndex:0].text;
+            if ([payPassword isEqualToString:@""]) {
+                [self showWarmingWithMessage:@"请输入支付密码"];
+                return;
+            }else{
+                self.payPassWord = payPassword;
+                [self activationCodeGenerated];
+            
+            }
+            
+            
+          }else
+                {
+                    return;
+                }
+    
+    }
+    
+    
+}
+
+//激活码生产
+-(void)activationCodeGenerated{
+
+        User *user = [User shareUser];
+        CreateActivationCode *createactivat = [[CreateActivationCode alloc]init];
+        createactivat.delegate = self;
+        createactivat.trancode = @"701195";  //交易码
+        createactivat.LoginPhoneNum = user.phoneNumber;  //代理商手机号
+        createactivat.currentAgentNumber = user.agentNumber;  //代理商编号
+    
+        createactivat.codeNum = self.CodeNum;   //激活码数量
+        createactivat.PayPassword = self.payPassWord;  //支付密码
+        [createactivat CreateActivationCodeRequest];
+}
+
+
+- (void)CreateActivationCodeSuccessWithMessage: (NSString *)message{
+
+   [UIComponentService showFailHudWithStatus:message];
+
+}
+
+- (void)CreateActivationCodeFildWithMessage: (NSString *)message{
+    
+     [UIComponentService showFailHudWithStatus:message];
+
+}
+
+//点击激活码划拨按钮
+-(IBAction)transferCodeAction:(id)sender{
+    User *user = [User shareUser];
+    ActivationCodeTransfer *activation = [[ActivationCodeTransfer alloc]init];
+    activation .delegate = self;
+    activation.trancode = @"701196";
+    activation.LoginPhoneNum = user.phoneNumber;
+    activation.currentAgentNumber = user.agentNumber;
+    [activation ActivationCodeTransferRequest];
+
+}
+
+@end

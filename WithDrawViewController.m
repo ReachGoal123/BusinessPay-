@@ -1,0 +1,580 @@
+//
+//  WithDrawViewController.m
+//  BusinessPay
+//
+//  Created by SHANGYITONG on 14-12-24.
+//  Copyright (c) 2014年 Tears. All rights reserved.
+//
+
+#import "WithDrawViewController.h"
+#import "WithDrawDO.h"
+#import "withDrawSuccessViewController.h"
+
+//#define SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
+
+@implementation WithDrawViewController
+
+-(void)viewDidLoad
+{
+    [super viewDidLoad];
+    
+    [self.navigationController.navigationBar setBackgroundImage:[UIImage imageNamed:@"titleNew.png"] forBarMetrics:UIBarMetricsDefault];
+    [[UINavigationBar appearance] setTintColor:[UIColor colorWithRed:225/255.f green:225/255.f blue:225/255.f alpha:1]];
+    
+    //[UIComponentService showHudWithStatus:kPleaseWait];
+    [self performSelector:@selector(accountRequest) withObject:nil afterDelay:kDelayTime];
+
+    [self setKeyBoard];
+    
+    self.navigationItem.titleView = [[UILabel alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 120.0f, 50.0f)];
+    UILabel *  lable = (UILabel *)self.navigationItem.titleView ;
+    [lable setText:@"提  现"];
+    lable.font = [UIFont boldSystemFontOfSize:20];
+    [lable setTextColor:[UIColor whiteColor]];
+    [lable setTextAlignment:NSTextAlignmentCenter];
+    
+    //    [UIComponentService showHudWithStatus:kPleaseWait];
+    //    [self performSelector:@selector(withdrawrequest) withObject:nil afterDelay:kDelayTime];
+}
+
+-(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    if ([segue.identifier isEqualToString:@"withToSuccessSegue"]) {
+        withDrawSuccessViewController *withSuccessVC=(withDrawSuccessViewController *)segue.destinationViewController;
+        withSuccessVC.accountDO=self.accountDO;
+        withSuccessVC.money=self.money.text;
+        withSuccessVC.buttonIndex=_buttonIndex;
+    }
+}
+
+
+-(void)textFieldDidEndEditing:(UITextField *)textField
+{
+    
+    if(self.money.text.length==kTextLengthZero)
+    {
+        [self showWarmingWithMessage:@"请输入金额"];
+        return;
+        
+    }
+    if(![self isPureFloat:self.money.text])
+    {
+        [self showWarmingWithMessage:@"输入金额有误,请重新输入"];
+        self.money.text=nil;
+        return;
+    }
+    if([self.money.text floatValue]<2)
+    {
+        [self showWarmingWithMessage:@"金额需不能小于2元，请重新输入"];
+        self.money.text=nil;
+        return;
+    }
+    float money=[self.accountDO.avidAccount integerValue]/100.f;
+    
+    if([self.money.text floatValue]>money)
+    {
+        [self showWarmingWithMessage:@"超出可提现金额"];
+        return;
+    }
+    if([self.money.text floatValue] ==kTextLengthZero  )
+    {
+        [self showWarmingWithMessage:@"金额不能为0"];
+        return;
+        
+    }
+    if ([self.money.text floatValue]>=50000) {
+        [self showWarmingWithMessage:@"单笔提现金额不可超出5万！"];
+        self.money.text=nil;
+        
+        return;
+        
+    }
+    
+    
+}
+
+
+-(void)isSeePassword:(id)sender
+{
+    if(setPasswordCanSee)
+    {
+        self.password.secureTextEntry=YES;
+        setPasswordCanSee=NO;
+    }else
+    {
+        self.password.secureTextEntry=NO;
+        setPasswordCanSee=YES;
+    }
+}
+
+- (BOOL)isPureFloat:(NSString *)string{
+    NSScanner* scan = [NSScanner scannerWithString:string];
+    float val;
+    return [scan scanFloat:&val] && [scan isAtEnd];
+}
+
+
+-(void) accountRequest
+{
+    _accountDO=[[AccountDO alloc] init];
+    _accountDO.delegate=self;
+    _accountDO.phoneNumber=[User shareUser].phoneNumber;
+    _accountDO.trancode=kTrancode_AccountMessage;
+    
+    [_accountDO accountRequest];
+    NSLog(@"account.card=%@",_accountDO.bindCard);
+}
+
+-(void)quickWithDrawButton:(id)sender
+{
+    [self.money resignFirstResponder];
+    _buttonIndex=1;
+    if(self.money.text.length==kTextLengthZero)
+    {
+//        [self showWarmingWithMessage:@"请输入金额"];
+        return;
+        
+    }
+    
+    float money=[self.accountDO.avidAccount integerValue]/100.f;
+    
+    if([self.money.text floatValue]>money)
+    {
+        [self showWarmingWithMessage:@"超出可提现金额"];
+        return;
+    }
+    if([self.money.text floatValue] ==kTextLengthZero  )
+    {
+        [self showWarmingWithMessage:@"金额不能为0"];
+        return;
+        
+    }
+    if([self.money.text floatValue]<=1.1)
+    {
+        [self showWarmingWithMessage:@"提现金额不能低于2元，请重新输入"];
+        return;
+    }
+    //    if (self.password.text.length==kTextLengthZero) {
+    //        [self showWarmingWithMessage:@"请输入支付密码"];
+    //        return;
+    //    }
+    self.quickWithDrawAlert =[[UIAlertView alloc] initWithTitle:@"闪电提现" message:nil delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil];
+    UITextField * txt = [[UITextField alloc] init];
+    txt.backgroundColor = [UIColor whiteColor];
+    txt.frame = CGRectMake(self.quickWithDrawAlert.center.x+65,self.quickWithDrawAlert.center.y, 150,23);
+    self.quickWithDrawAlert.alertViewStyle = UIAlertViewStyleSecureTextInput;//看这里。。可以这样用
+    //[alert textFieldAtIndex:0].keyboardType = UIKeyboardTypeDefault;
+    [self.quickWithDrawAlert textFieldAtIndex:0].placeholder=@"请输入支付密码";
+    [self.quickWithDrawAlert textFieldAtIndex:0].keyboardType=UIKeyboardTypeNumberPad;
+    [self.quickWithDrawAlert textFieldAtIndex:0].delegate = self;
+    [self.quickWithDrawAlert addSubview:txt];
+    [self.quickWithDrawAlert show];
+    
+    
+    
+    
+}
+
+
+
+-(void)clickWithDrawButton:(id)sender
+{
+    [self.money resignFirstResponder];
+    _buttonIndex=0;
+    
+    if(self.money.text.length==kTextLengthZero)
+    {
+//        [self showWarmingWithMessage:@"请输入金额"];
+        return;
+        
+    }
+    
+    float money=[self.accountDO.totalAccount integerValue]/100.f;
+    
+    if([self.money.text floatValue]>money)
+    {
+        [self showWarmingWithMessage:@"超出可提现金额"];
+        return;
+    }
+    if([self.money.text floatValue] ==kTextLengthZero  )
+    {
+        [self showWarmingWithMessage:@"金额不能为0"];
+        return;
+        
+    }
+    if([self.money.text floatValue]<2)
+    {
+        [self showWarmingWithMessage:@"提现金额不能低于2元，请重新输入"];
+        return;
+    }
+    //    if (self.password.text.length==kTextLengthZero) {
+    //        [self showWarmingWithMessage:@"请输入支付密码"];
+    //        return;
+    //    }
+    self.commonWithDrawAlert=[[UIAlertView alloc] initWithTitle:@"提现" message:nil delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确认", nil];
+    UITextField * txt = [[UITextField alloc] init];
+    txt.backgroundColor = [UIColor whiteColor];
+    txt.frame = CGRectMake(self.commonWithDrawAlert.center.x+65,self.commonWithDrawAlert.center.y, 150,23);
+    self.commonWithDrawAlert.alertViewStyle = UIAlertViewStyleSecureTextInput;//看这里。。可以这样用
+    //[alert textFieldAtIndex:0].keyboardType = UIKeyboardTypeDefault;
+    [self.commonWithDrawAlert textFieldAtIndex:0].placeholder=@"请输入支付密码";
+    [self.commonWithDrawAlert textFieldAtIndex:0].keyboardType=UIKeyboardTypeNumberPad;
+    [self.commonWithDrawAlert textFieldAtIndex:0].delegate = self;
+    [self.commonWithDrawAlert addSubview:txt];
+    [self.commonWithDrawAlert show];
+    
+    //   [UIComponentService showHudWithStatus:kPleaseWait];
+    //    [self performSelector:@selector(withdrawrequest) withObject:nil afterDelay:kDelayTime];
+}
+
+
+-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if (alertView==self.quickWithDrawAlert) {
+        if (buttonIndex==1) {
+            NSString *payPassword=[alertView textFieldAtIndex:0].text;
+            if ([payPassword isEqualToString:@""]) {
+                [self showWarmingWithMessage:@"请输入支付密码"];
+                return;
+            }else{
+            //[UIComponentService showHudWithStatus:kPleaseWait];
+            [self performSelector:@selector(urgencyWithDrawRequestWithPassword:) withObject:payPassword afterDelay:kDelayTime];
+            }
+            
+            
+        }else
+        {
+            return;
+        }
+    }
+    
+    else if(alertView==self.commonWithDrawAlert)
+        if (buttonIndex==1) {
+            
+            
+            NSString *password=[alertView textFieldAtIndex:0].text;
+            if ([password isEqualToString:@""]) {
+                [self showWarmingWithMessage:@"请输入支付密码"];
+                return;
+            }else{
+
+            //[UIComponentService showHudWithStatus:kPleaseWait];
+            [self performSelector:@selector(withdrawrequestWithPassword:) withObject:password afterDelay:kDelayTime];
+        }
+        }
+}
+
+
+-(void)withdrawrequestWithPassword:(NSString *)password
+{
+    _comWithDrawDO=[[WithDrawDO alloc] init];
+    _comWithDrawDO.delegate=self;
+    _comWithDrawDO.trancode=@"701131";
+    _comWithDrawDO.phoneNumber=[User shareUser].phoneNumber;
+    
+    _comWithDrawDO.txMoney=[NSString stringWithFormat:@"%i", (int)([self.money.text floatValue]*100.f)];
+    _comWithDrawDO.payPassword=password;
+    _comWithDrawDO.accountCard=self.accountDO.bindCard;
+    
+    [_comWithDrawDO withDrawRequest];
+}
+
+
+
+
+-(void) urgencyWithDrawRequestWithPassword:(NSString *)password
+{
+    _comWithDrawDO=[[WithDrawDO alloc] init];
+    _comWithDrawDO.delegate=self;
+    _comWithDrawDO.trancode=@"701131";
+    _comWithDrawDO.phoneNumber=[User shareUser].phoneNumber;
+    //    float money=[self.money.text integerValue]*100.f;
+    //
+    //    withDraw.txMoney=[NSString stringWithFormat:@"%.2f",money];
+    _comWithDrawDO.txMoney=[NSString stringWithFormat:@"%i", (int)([self.money.text floatValue]*100.f)];
+    _comWithDrawDO.payPassword=password;
+    _comWithDrawDO.isUrgency=@"1";
+    _comWithDrawDO.accountCard=self.accountDO.bindCard;
+    
+    [_comWithDrawDO withDrawRequest];
+}
+
+- (void)setKeyBoard
+{
+    NSArray *tfArr = [NSArray arrayWithObjects:_money, nil];
+    
+    [IQKeyboardManager sharedManager];
+    
+    for (int i = 0; i < tfArr.count; i++) {
+        UITextField *tf = (UITextField *)[tfArr objectAtIndex:i];
+        tf.delegate = self;
+        [tf addPreviousNextDoneOnKeyboardWithTarget:self
+                                     previousAction:@selector(previousClicked:)
+                                         nextAction:@selector(nextClicked:)
+                                         doneAction:@selector(doneClicked:)];
+        //First textField
+        if (i == 0)
+        {
+            [tf setEnablePrevious:NO next:YES];
+        }
+        //Last textField
+        else if(i== tfArr.count - 1)
+        {
+            [tf setEnablePrevious:YES next:NO];
+        }
+    }
+}
+
+
+#pragma mark - toolBarItemAction
+
+-(void)nextClicked:(UISegmentedControl*)segmentedControl
+{
+    [(UITextField*)[self.view viewWithTag:selectedTextFieldTag+1] becomeFirstResponder];
+}
+
+-(void)doneClicked:(UIBarButtonItem*)barButton
+{
+    [self.view endEditing:YES];
+}
+
+-(void)previousClicked:(UISegmentedControl*)segmentedControl
+{
+    [(UITextField*)[self.view viewWithTag:selectedTextFieldTag-1] becomeFirstResponder];
+}
+
+
+#pragma mark  - accountDelegate
+
+-(void)accountResponseSuccessWithMessage:(NSString *)message withAccount:(AccountDO *)accountDO
+{
+    //[UIComponentService showSuccessHudWithStatus:message];
+    self.bankName.text=accountDO.bankName;
+    NSString *bindCard=[accountDO.bindCard substringWithRange:NSMakeRange(accountDO.bindCard.length-4, 4)];
+    
+    self.bankCardID.text=[NSString stringWithFormat:@"尾号%@",bindCard];
+    if([accountDO.typeCard isEqualToString:@"01"])
+    {
+        self.typeCard.text=@"借记卡";
+    }
+    float money=[accountDO.avidAccount integerValue]/100.f;
+    
+    self.canwithDrawMoney.text=[NSString stringWithFormat:@"可提现金额：%.2f元",money];
+    
+    self.accountDO=accountDO;
+    
+   
+}
+
+
+-(void)accountFieldWithMessage:(NSString *)message
+{
+    if ([_accountDO.responseCode isEqualToString:@"02042"]) {
+        //[UIComponentService showFailHudWithStatus:nil];
+        self.canwithDrawMoney.text=[NSString stringWithFormat:@"可提现金额：0.0元"];
+    }else{
+        [UIComponentService showFailHudWithStatus:message];
+    }
+
+
+    
+}
+//
+//#pragma mark - addPiontButton
+//-(void)textFieldDidBeginEditing:(UITextField *)textField {
+//    if (IsIOS6) {
+//        [[NSNotificationCenter defaultCenter] addObserver:self
+//                                                 selector:@selector(keyboardWillShow:)
+//                                                     name:UIKeyboardDidShowNotification
+//                                                   object:nil];
+//    } else {
+//        [[NSNotificationCenter defaultCenter] addObserver:self
+//                                                 selector:@selector(keyboardWillShow:)
+//                                                     name:UIKeyboardWillShowNotification
+//                                                   object:nil];
+//    }
+//}
+//
+//- (void)keyboardWillShow:(NSNotification *)note {
+//    // create custom button
+//    UIButton *doneButton = [UIButton buttonWithType:UIButtonTypeCustom];
+//    doneButton.frame = CGRectMake(0, 206.5, 104.5, 53.5);
+//    doneButton.adjustsImageWhenHighlighted = NO;
+//    if (IsIOS6) {
+//        [doneButton setImage:[UIImage imageNamed:@"pointnomal_ios7"] forState:UIControlStateNormal];
+//        [doneButton setImage:[UIImage imageNamed:@"pointtouch_ios7"] forState:UIControlStateHighlighted];
+//    } else {
+//        [doneButton setBackgroundImage:[UIImage imageNamed:@"pointnomal_ios7"] forState:UIControlStateNormal];
+//        [doneButton setBackgroundImage:[UIImage imageNamed:@"pointtouch_ios7"] forState:UIControlStateHighlighted];
+//    }
+//    [doneButton addTarget:self action:@selector(pointButton:) forControlEvents:UIControlEventTouchUpInside];
+//
+//    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7.0")) {
+//        dispatch_async(dispatch_get_main_queue(), ^{
+//            UIView *keyboardView = [[[[[UIApplication sharedApplication] windows] lastObject] subviews] firstObject];
+//            [doneButton setFrame:CGRectMake(0, keyboardView.frame.size.height - 53.5, 104.5, 53.5)];
+//            [keyboardView addSubview:doneButton];
+//            [keyboardView bringSubviewToFront:doneButton];
+//
+//            [UIView animateWithDuration:[[note.userInfo objectForKey:UIKeyboardAnimationDurationUserInfoKey] floatValue]-.02
+//                                  delay:.0
+//                                options:[[note.userInfo objectForKey:UIKeyboardAnimationCurveUserInfoKey] intValue]
+//                             animations:^{
+//                                 self.view.frame = CGRectOffset(self.view.frame, 0, 0);
+//                             } completion:nil];
+//        });
+//    }else {
+//        // locate keyboard view
+//        dispatch_async(dispatch_get_main_queue(), ^{
+//            UIWindow* tempWindow = [[[UIApplication sharedApplication] windows] objectAtIndex:1];
+//            UIView* keyboard;
+//            for(int i=0; i<[tempWindow.subviews count]; i++) {
+//                keyboard = [tempWindow.subviews objectAtIndex:i];
+//                // keyboard view found; add the custom button to it
+//                if([[keyboard description] hasPrefix:@"<UIPeripheralHost"] == YES)
+//                    [keyboard addSubview:doneButton];
+//            }
+//        });
+//    }
+//}
+//
+//#pragma mark -
+//
+//- (void)pointButton: (UIButton *)btn
+//{
+//    if (![self stringContentString:self.money.text]) {
+//        if (self.money.text.length == kTextLengthZero) {
+//            self.money.text  = kZeroPoint;
+//        } else {
+//            self.money.text = [self.money.text stringByAppendingString:kPointStr];
+//        }
+//    }
+//}
+//
+//- (BOOL)stringContentString:(NSString *)motherString
+//{
+//    if ([motherString rangeOfString:kPointStr].location!=NSNotFound)
+//    {
+//        return YES;
+//    } else {
+//        return NO;
+//    }
+//}
+//
+
+
+#pragma mark -  delegate
+
+- (void)withDrawResponseSuccessWithMessage:(NSString *)message
+{
+    [UIComponentService showSuccessHudWithStatus:message];
+    //[self dismissViewControllerAnimated:YES completion:nil];
+    //[self.navigationController popViewControllerAnimated:YES];
+    [self performSegueWithIdentifier:@"withToSuccessSegue" sender:self];
+}
+
+- (void)withDrawFieldWithMessage:(NSString *)message
+{
+    if ([_comWithDrawDO.responeCode isEqualToString:@"000088"]) {
+        //[UIComponentService showFailHudWithStatus:nil];
+        return;
+    }else{
+       [UIComponentService showFailHudWithStatus:message];
+    }
+}
+
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
+{
+    
+    if ([string isEqualToString:@"\n"])
+    {
+        return YES;
+    }
+    if (textField==self.money) {
+        
+  
+    if ([self.money.text rangeOfString:@"."].location==NSNotFound) {
+        isHaveDian=NO;
+    }
+    if ([string length]>0)
+    {
+        unichar single=[string characterAtIndex:0];//当前输入的字符
+        if ((single >='0' && single<='9') || single=='.')//数据格式正确
+        {
+            //首字母不能为0和小数点
+            if([self.money.text length]==0){
+                if(single == '.'){
+                    //[self showWarmingWithMessage:@"亲，第一个数字不能为小数点"];
+                    [self.money.text stringByReplacingCharactersInRange:range withString:@"0."];
+                    return NO;
+                }
+                            }
+            if (single=='.')
+            {
+                if(!isHaveDian)//text中还没有小数点
+                {
+                    isHaveDian=YES;
+                    return YES;
+                }else
+                {
+                    //[self alertView:@"亲，您已经输入过小数点了"];
+                    [self showWarmingWithMessage:@"输入格式错误"];
+                    [self.money.text stringByReplacingCharactersInRange:range withString:@""];
+                    return NO;
+                }
+            }
+            else
+            {
+                if (isHaveDian==YES)//存在小数点
+                {
+                    //判断小数点的位数
+                    NSRange ran=[self.money.text rangeOfString:@"."];
+                    int tt=range.location-ran.location;
+                    if (tt <= 2){
+                        return YES;
+                    }else{
+                        //[self alertView:@"亲，您最多输入两位小数"];
+                        return NO;
+                    }
+                }
+                else
+                {
+                    return YES;
+                }
+            }
+        }else{//输入的数据格式不正确
+            [self showWarmingWithMessage:@"输入格式不正确"];
+            [self.money.text stringByReplacingCharactersInRange:range withString:@""];
+            return NO;
+        }
+    }
+    else
+    {
+        return YES;
+    }
+    
+ }
+ NSString * toBeString = [textField.text stringByReplacingCharactersInRange:range withString:string];
+    
+    if ([self.commonWithDrawAlert textFieldAtIndex:0]  == textField)
+    {
+        if ([toBeString length] > 6) {
+            textField.text = [toBeString substringToIndex:6];
+            return NO;
+        }
+    }
+    if ([self.quickWithDrawAlert textFieldAtIndex:0] ==textField) {
+        if ([toBeString length] > 6) {
+            textField.text = [toBeString substringToIndex:6];
+            return NO;
+        }
+    }
+    
+    return YES;
+}
+
+
+
+
+@end

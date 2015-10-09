@@ -1,0 +1,463 @@
+//
+//  BaseModel.m
+//  BusinessPay
+//
+//  Created by Tears on 14-4-8.
+//  Copyright (c) 2014年 Tears. All rights reserved.
+//
+
+#import "BaseModel.h"
+
+
+@implementation BaseModel
+
++ (NSString *)XMLStringFromDic :(NSMutableDictionary *)dic
+{
+    NSArray * dicKeys   = [dic allKeys];
+    NSString * xmlStr = @"<?xml version='1.0' encoding='UTF-8'?><EPOSPROTOCOL>";
+    NSString * leftStr  = @"<";
+    NSString * rightStr = @">";
+    if (dicKeys.count > 0) {
+        for (NSString * key in dicKeys) {
+            NSString * value  = [dic objectForKey:key];
+            NSString * keyLeftStr = [[leftStr stringByAppendingString:key] stringByAppendingString:rightStr];
+            NSString * keyRightStr =[[[leftStr stringByAppendingString:@"/"] stringByAppendingString:key] stringByAppendingString:rightStr];
+            NSString * keyStr = [[keyLeftStr stringByAppendingString:value] stringByAppendingString:keyRightStr];
+            if (!xmlStr) {
+                xmlStr  = keyStr;
+            } else {
+                xmlStr  = [xmlStr stringByAppendingString:keyStr];
+            }
+        }
+    }
+    xmlStr  = [xmlStr stringByAppendingString:@"</EPOSPROTOCOL>"];
+    return xmlStr;
+}
+
++ (NSArray *)titles
+{
+    static NSArray *_titles;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _titles = @[@"A",@"B",@"C",@"D",@"E",@"F",@"G",@"H",@"I",@"0",@"J",@"K",@"L",@"M",@"N",@"O",@"P",@"Q",@"R",@"S",@"T",@"U",@"V",@"W",@"8",@"X",@"Y",@"Z",@"0",@"1",@"2",@"3",@"4",@"5",@"6",@"7",@"8",@"9",@"a",@"b",@"c",@"d",@"e",@"f",@"g",@"h",@"i",@"j",@"k",@"l",@"m",@"n",@"o",@"p",@"q",@"r",@"s",@"t",@"u",@"v",@"w",@"x",@"y",@"z",@"0",@"1",@"2",@"3",@"4",@"5",@"6",@"7",@"8",@"9",@"1",@"3",@"6"];
+    });
+    return _titles;
+}
+
++ (NSString *)randomString
+{
+    NSArray * randomLetterArr = [self titles];
+    NSString *arcStr = @"";
+    for (int i = 0 ; i < 32; i++) {
+        arcStr = [arcStr stringByAppendingString:randomLetterArr[arc4random()%randomLetterArr.count]];
+    }
+    return arcStr;
+}
+
+- (NSString *)stringFromNSdata: (NSData *)tempData
+{
+    NSString * resultStr = @"" ;
+    Byte * tempBytes = (Byte * )[tempData bytes] ;
+    for (int i = 0; i < [tempData length]; i ++) {
+        
+        // 转换成16 进制字符串
+        NSString * tempStr  = [self ToHex:tempBytes[i]];
+        //        NSLog(@"%@",tempStr);
+        tempStr = [tempStr stringByPaddingToLength:2 withString:@"0" startingAtIndex:0] ;
+        
+        resultStr = [resultStr stringByAppendingString:tempStr] ;
+    }
+    return resultStr;
+}
+
+- (NSString *)ToHex:(int)tmpid
+{
+    NSString *endtmp=@"";
+    NSString *nLetterValue;
+    NSString *nStrat;
+    int ttmpig=tmpid%16;
+    int tmp=tmpid/16;
+    switch (ttmpig)
+    {
+        case 10:
+            nLetterValue =@"A";break;
+        case 11:
+            nLetterValue =@"B";break;
+        case 12:
+            nLetterValue =@"C";break;
+        case 13:
+            nLetterValue =@"D";break;
+        case 14:
+            nLetterValue =@"E";break;
+        case 15:
+            nLetterValue =@"F";break;
+        default:nLetterValue=[[NSString alloc]initWithFormat:@"%i",ttmpig];
+            
+    }
+    switch (tmp)
+    {
+        case 10:
+            nStrat =@"A";break;
+        case 11:
+            nStrat =@"B";break;
+        case 12:
+            nStrat =@"C";break;
+        case 13:
+            nStrat =@"D";break;
+        case 14:
+            nStrat =@"E";break;
+        case 15:
+            nStrat =@"F";break;
+        default:nStrat=[[NSString alloc]initWithFormat:@"%i",tmp];
+            
+    }
+    endtmp=[[NSString alloc]initWithFormat:@"%@%@",nStrat,nLetterValue];
+    NSString *str=@"";
+    if([endtmp length]<4)
+    {
+        for (int x=[endtmp length]; x<2; x++) {
+            str=[str stringByAppendingString:@"0"];
+        }
+        endtmp=[[NSString alloc]initWithFormat:@"%@%@",str,endtmp];
+    }
+    return endtmp;
+}
+
+
+
+#pragma mark - 手机号码
+
++ (BOOL) isValidPhone:(NSString*)value {
+    if (value.length == 0) {
+        return FALSE;
+    }
+    const char *cvalue = [value UTF8String];
+    int len = strlen(cvalue);
+    if (len != 11) {
+        return FALSE;
+    }
+    if (![self isValidNumber:value])
+    {
+        return FALSE;
+    }
+    NSString *preString = [[NSString stringWithFormat:@"%@",value] substringToIndex:2];
+    if ([preString isEqualToString: @"13"] ||
+        [preString isEqualToString: @"15"] ||
+        [preString isEqualToString: @"18"] ||
+        [preString isEqualToString: @"17"] ||
+        [preString isEqualToString: @"14"])
+    {
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+    return TRUE;
+}
+
++ (BOOL) isValidNumber:(NSString*)value{
+    const char *cvalue = [value UTF8String];
+    int len = strlen(cvalue);
+    for (int i = 0; i < len; i++) {
+        if(!isNumber(cvalue[i])){
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+BOOL isNumber (char ch)
+{
+    if (!(ch >= '0' && ch <= '9')) {
+        return FALSE;
+    }
+    return TRUE;
+}
+#pragma mark
+
+#pragma mark - 身份证
++ (NSString *)getStringWithRange:(NSString *)str Value1:(NSInteger)value1 Value2:(NSInteger)value2
+{
+    return [str substringWithRange:NSMakeRange(value1,value2)];
+}
+
+
++ (BOOL)areaCode:(NSString *)code
+{
+    NSMutableDictionary *dic = [[NSMutableDictionary alloc] init] ;
+    [dic setObject:@"北京" forKey:@"11"];
+    [dic setObject:@"天津" forKey:@"12"];
+    [dic setObject:@"河北" forKey:@"13"];
+    [dic setObject:@"山西" forKey:@"14"];
+    [dic setObject:@"内蒙古" forKey:@"15"];
+    [dic setObject:@"辽宁" forKey:@"21"];
+    [dic setObject:@"吉林" forKey:@"22"];
+    [dic setObject:@"黑龙江" forKey:@"23"];
+    [dic setObject:@"上海" forKey:@"31"];
+    [dic setObject:@"江苏" forKey:@"32"];
+    [dic setObject:@"浙江" forKey:@"33"];
+    [dic setObject:@"安徽" forKey:@"34"];
+    [dic setObject:@"福建" forKey:@"35"];
+    [dic setObject:@"江西" forKey:@"36"];
+    [dic setObject:@"山东" forKey:@"37"];
+    [dic setObject:@"河南" forKey:@"41"];
+    [dic setObject:@"湖北" forKey:@"42"];
+    [dic setObject:@"湖南" forKey:@"43"];
+    [dic setObject:@"广东" forKey:@"44"];
+    [dic setObject:@"广西" forKey:@"45"];
+    [dic setObject:@"海南" forKey:@"46"];
+    [dic setObject:@"重庆" forKey:@"50"];
+    [dic setObject:@"四川" forKey:@"51"];
+    [dic setObject:@"贵州" forKey:@"52"];
+    [dic setObject:@"云南" forKey:@"53"];
+    [dic setObject:@"西藏" forKey:@"54"];
+    [dic setObject:@"陕西" forKey:@"61"];
+    [dic setObject:@"甘肃" forKey:@"62"];
+    [dic setObject:@"青海" forKey:@"63"];
+    [dic setObject:@"宁夏" forKey:@"64"];
+    [dic setObject:@"新疆" forKey:@"65"];
+    [dic setObject:@"台湾" forKey:@"71"];
+    [dic setObject:@"香港" forKey:@"81"];
+    [dic setObject:@"澳门" forKey:@"82"];
+    [dic setObject:@"国外" forKey:@"91"];
+    
+    if ([dic objectForKey:code] == nil) {
+        
+        return NO;
+    }
+    return YES;
+}
+
+
++ (BOOL)Chk18PaperId :(NSString *)sPaperId
+{
+    //判断位数
+    if ([sPaperId length] < 15 ||[sPaperId length] > 18) {
+        
+        return NO;
+    }
+    
+    NSString *carid = sPaperId;
+    long lSumQT =0;
+    //加权因子
+    int R[] ={7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2 };
+    //校验码
+    unsigned char sChecker[11]={'1','0','X', '9', '8', '7', '6', '5', '4', '3', '2'};
+    
+    //将15位身份证号转换成18位
+    
+    NSMutableString *mString = [NSMutableString stringWithString:sPaperId];
+    if ([sPaperId length] == 15) {
+        
+        
+        [mString insertString:@"19" atIndex:6];
+        
+        long p = 0;
+        const char *pid = [mString UTF8String];
+        for (int i=0; i<=16; i++)
+        {
+            p += (pid[i]-48) * R[i];
+        }
+        
+        int o = p%11;
+        NSString *string_content = [NSString stringWithFormat:@"%c",sChecker[o]];
+        [mString insertString:string_content atIndex:[mString length]];
+        carid = mString;
+        
+    }
+    
+    //判断地区码
+    NSString * sProvince = [carid substringToIndex:2];
+    
+    if (![self areaCode:sProvince]) {
+        
+        return NO;
+    }
+    
+    //判断年月日是否有效
+    
+    //年份
+    int strYear = [[self getStringWithRange:carid Value1:6 Value2:4] intValue];
+    //月份
+    int strMonth = [[self getStringWithRange:carid Value1:10 Value2:2] intValue];
+    //日
+    int strDay = [[self getStringWithRange:carid Value1:12 Value2:2] intValue];
+    
+    
+    NSTimeZone *localZone = [NSTimeZone localTimeZone];
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init] ;
+    [dateFormatter setDateStyle:NSDateFormatterMediumStyle];
+    [dateFormatter setTimeStyle:NSDateFormatterNoStyle];
+    [dateFormatter setTimeZone:localZone];
+    [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    NSDate *date=[dateFormatter dateFromString:[NSString stringWithFormat:@"%d-%d-%d 12:01:01",strYear,strMonth,strDay]];
+    if (date == nil) {
+        
+        return NO;
+    }
+    
+    const char *PaperId  = [carid UTF8String];
+    
+    //检验长度
+    if( 18 != strlen(PaperId)) return -1;
+    //校验数字
+    for (int i=0; i<18; i++)
+    {
+        if ( !isdigit(PaperId[i]) && !(('X' == PaperId[i] || 'x' == PaperId[i]) && 17 == i) )
+        {
+            return NO;
+        }
+    }
+    //验证最末的校验码
+    for (int i=0; i<=16; i++)
+    {
+        lSumQT += (PaperId[i]-48) * R[i];
+    }
+    if (sChecker[lSumQT%11] != PaperId[17] )
+    {
+        return NO;
+    }
+    
+    return YES;
+}
+#pragma mark
+
++ (BOOL) checkCardNo:(NSString*) cardNo
+{
+    if (cardNo.length == kTextLengthZero) {
+        return NO;
+    }
+    cardNo = [cardNo stringByReplacingOccurrencesOfString:@" " withString:@""];
+    int sum = 0;
+    int len = [cardNo length];
+    int i = 0;
+    
+    while (i < len) {
+        NSString *tmpString = [cardNo substringWithRange:NSMakeRange(len - 1 - i, 1)];
+        
+        NSLog(@"tmpString=%@",tmpString);
+        
+        int tmpVal = [tmpString intValue];
+        
+        NSLog(@"tmpVal=%i",tmpVal);
+        
+        if (i % 2 != 0) {
+            tmpVal *= 2;
+            if(tmpVal>=10) {
+                tmpVal -= 9;
+            }
+        }
+        sum += tmpVal;
+        i++;
+    }
+    
+    if((sum % 10) == 0)
+        return YES;
+    else
+        return NO;
+}
+
++ (BOOL)isChineseName:(NSString *)name
+{
+    if (name.length == kTextLengthZero) {
+        return NO;
+    }
+    BOOL result = YES ;
+    int length = [name length];
+    for (int i=0; i<length; ++i)
+    {
+        NSRange range = NSMakeRange(i, 1);
+        NSString *subString = [name substringWithRange:range];
+        const char    *cString = [subString UTF8String];
+        if (strlen(cString) != 3)
+        {
+            //            NSLog(@"汉字:%s", cString);
+            result = NO;
+            break;
+        }
+    }
+    return result;
+}
+
++ (NSString *)statusString:(NSString *)str
+{
+    if ([str isEqualToString:@"0"]) {
+        return @"支付成功";
+    } else if ([str isEqualToString:@"1"]) {
+        return @"初始状态";
+    } else if ([str isEqualToString:@"2"]) {
+        return @"超时";
+    } else if ([str isEqualToString:@"3"]) {
+        return @"支付失败";
+    } else if ([str isEqualToString:@"4"]) {
+        return @"待支付";
+    } else if ([str isEqualToString:@"5"]) {
+        return @"支付失败";
+    } else if ([str isEqualToString:@"6"]) {
+        return @"短信验证失败";
+    } else if ([str isEqualToString:@"7"]) {
+        return @"支付超时";
+    } else if ([str isEqualToString:@"8"]) {
+        return @"支付超时";
+    } else if ([str isEqualToString:@"9"]) {
+        return @"短信验证超时";
+    } else if ([str isEqualToString:@"10"]) {
+        return @"";
+    } else {
+        return @"";
+    }
+}
++ (NSString *)deleteBlankFromString: (NSString *)string
+{
+    return [string stringByReplacingOccurrencesOfString:@" " withString:@""];
+}
+
+- (User *)user
+{
+    return [User shareUser];
+}
+
+- (NSString *)appendPospURL:(NSString *)trancode
+{
+//  8443
+   return [NSString stringWithFormat:@"http://%@:8092/mpay/%@.tran7",kIP,trancode];
+   // return [NSString stringWithFormat:@"http://mpay.qhno1.com/%@.tran7",trancode];
+}
+
+- (NSString *)appendPosmURL:(NSString *)trancode
+{
+    return [NSString stringWithFormat:@"http://%@:8092/mpay/%@.tran7",kIP,trancode];
+   // return [NSString stringWithFormat:@" http://mpay.qhno1.com/%@.tran7",trancode];
+}
+
+- (NSString *)appendPosm5URL:(NSString *)trancode
+{
+//  8092
+    return [NSString stringWithFormat:@"http://%@:8092/mpay/%@.tran7",kIP,trancode];
+   //return [NSString stringWithFormat:@"http://mpay.qhno1.com/%@.tran7",trancode];
+}
+
+- (NSString *)appendPayURL:(NSString *)trancode
+{
+//  8443
+    return [NSString stringWithFormat:@"http://%@:8092/mpay/%@.tran",kIP,trancode];
+  // return [NSString stringWithFormat:@"http://mpay.qhno1.com/%@.tran",trancode];
+}
+
+
+-(NSString *)appendPosm7URL:(NSString *)trancode
+{
+    return [NSString stringWithFormat:@"http://%@:8092/mpay/%@.tran7",kIP,trancode];
+   // return [NSString stringWithFormat:@"http://mpay.qhno1.com/%@.tran7",trancode];
+}
+
+-(NSString *)appendPosmUploadURL:(NSString *)trancode
+{
+    return [NSString stringWithFormat:@"http://%@:8092/posm/%@.upload4m",kIP,trancode];
+  // return [NSString stringWithFormat:@"http://mng.qhno1.com/%@.upload4m",trancode];
+}
+
+
+
+@end

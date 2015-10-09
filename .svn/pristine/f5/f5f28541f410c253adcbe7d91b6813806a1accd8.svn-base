@@ -1,0 +1,82 @@
+//
+//  MyCircleViewController.m
+//  BusinessPay
+//
+//  Created by SHANGYITONG on 15-3-17.
+//  Copyright (c) 2015年 Tears. All rights reserved.
+//
+
+#import "MyCircleViewController.h"
+#import "MyCircleTableViewCell.h"
+#import "MyCircleDO.h"
+
+
+@interface MyCircleViewController ()
+
+@end
+
+//@synthesize array=_array;
+
+@implementation MyCircleViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    //self.temArr=[NSMutableArray arrayWithCapacity:2048];
+    
+    self.tableView.dataSource=self;
+    self.tableView.delegate=self;
+    
+    [self.navigationController.navigationBar setBackgroundImage:[UIImage imageNamed:@"titleNew.png"] forBarMetrics:UIBarMetricsDefault];
+    [[UINavigationBar appearance] setBackgroundImage:[UIImage imageNamed:@"titleNew.png"] forBarMetrics:UIBarMetricsDefault];
+    [[UINavigationBar appearance] setTintColor:[UIColor colorWithRed:225/255.f green:225/255.f blue:225/255.f alpha:1]];
+    
+}
+
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 1;
+}
+
+-(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return self.temArr.count;
+    
+}
+
+
+-(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    MyCircleTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"CELL" forIndexPath:indexPath];
+    
+    MyCircleDO * myCircleDO=[self.temArr objectAtIndex:indexPath.row];
+    
+//    cell.imageView.layer.masksToBounds = YES;
+//    cell.imageView.contentMode = UIViewContentModeScaleAspectFit;
+    
+    cell.merchantNameLabel.text=myCircleDO.merchantName;
+    cell.merchantPhoneNumberLabel.text=myCircleDO.merPhoneNumber;
+    
+    if (myCircleDO.applyDate.length<=8) {
+//         cell.createTimeLabel.text        = [NSString stringWithFormat:@"%@-%@-%@",[myCircleDO.applyDate substringWithRange:NSMakeRange(0, 4)],[myCircleDO.applyDate substringWithRange:NSMakeRange(4, 2)],[myCircleDO.applyDate substringWithRange:NSMakeRange(6, 2)]];
+    }
+    else
+    {
+//    
+//      cell.createTimeLabel.text = [NSString stringWithFormat:@"%@-%@-%@ %@:%@:%@",[myCircleDO.applyDate substringWithRange:NSMakeRange(0, 4)],[myCircleDO.applyDate substringWithRange:NSMakeRange(4, 2)],[myCircleDO.applyDate substringWithRange:NSMakeRange(6, 2)],[myCircleDO.applyDate substringWithRange:NSMakeRange(8, 2)],[myCircleDO.applyDate substringWithRange:NSMakeRange(10, 2)],[myCircleDO.applyDate substringWithRange:NSMakeRange(12, 2)]];
+    }
+    
+    return cell;
+    //cell.createTimeLabel.text=myCircleDO.applyDate;
+    
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    
+}
+
+
+
+@end

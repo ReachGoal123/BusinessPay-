@@ -1,0 +1,541 @@
+//
+//  YiBaoChannelViewController.m
+//  BusinessPay
+//
+//  Created by SHANGYINTONG on 15/4/27.
+//  Copyright (c) 2015年 Tears. All rights reserved.
+//
+
+#import "YiBaoChannelViewController.h"
+#import "YiBaoNextViewController.h"
+
+
+@interface YiBaoChannelViewController ()
+{
+    NSInteger   selectedTextFieldTag;
+    BOOL _isChooseBank;
+    int count;
+    int countCVN2;
+}
+
+
+@property (nonatomic,strong) NSArray *imageArr;
+@property (nonatomic,strong) NSArray *bankNameArr;
+@property (nonatomic,strong) NSArray *bankCodeArr;
+
+@property (nonatomic,weak) IBOutlet UIScrollView *scrollView;
+@property (nonatomic,weak) IBOutlet UIView *myView;
+
+@property (nonatomic,strong) UITableView *tableView;
+
+
+@property (nonatomic,weak) IBOutlet UIImageView *bankImageView;
+@property (nonatomic,weak) IBOutlet UILabel *moneyLabel;
+@property (nonatomic,weak) IBOutlet UILabel *bankNameLabel;
+@property (nonatomic,weak) IBOutlet UILabel *cardTypeLabel;
+@property (nonatomic,weak) IBOutlet UITextField *cardTelTextField;
+@property (nonatomic,weak) IBOutlet UITextField *IDcardNumberTextField;
+@property (nonatomic,weak) IBOutlet UITextField *cardNameTextField;
+@property (nonatomic,weak) IBOutlet UITextField *cardCodeTextField;
+@property (nonatomic,weak) IBOutlet UITextField *validityTextField;
+@property (nonatomic,weak) IBOutlet UITextField *cvvTextField;
+
+@property (nonatomic,strong) UIImageView *imageView;
+@property (nonatomic,strong) UIImageView *cvnImageView;
+@property (nonatomic,strong) UIView *secondView;
+
+
+
+@property (nonatomic,weak) IBOutlet UISwitch *switchButton;
+
+@property (nonatomic,strong) NSString *isBind;
+
+
+@property (nonatomic,strong) YiBaoPayChannelDO *yibaoPayChannelDO;
+-(IBAction)helpAction:(id)sender;
+-(IBAction)helpCVN2Action:(id)sender;
+
+-(IBAction)nextStepAction:(id)sender;
+-(IBAction)isBindAction:(id)sender;
+
+@end
+
+@implementation YiBaoChannelViewController
+
+-(void)viewDidLayoutSubviews
+{
+    [self.scrollView setScrollEnabled:YES];
+    self.scrollView.contentSize = CGSizeMake(self.view.frame.size.width, 560);
+    self.scrollView.showsHorizontalScrollIndicator=NO;
+    
+}
+
+-(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    if ([segue.identifier isEqualToString:@"toYibaoNextSegue"]) {
+        YiBaoNextViewController *yibaoNextVC=(YiBaoNextViewController *)segue.destinationViewController;
+        yibaoNextVC.clsno=self.yibaoPayChannelDO.clslogNO;
+        yibaoNextVC.name=self.cardNameTextField.text;
+        yibaoNextVC.phoneNumber=self.cardTelTextField.text;
+    }
+    
+    
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [self setKeyBoard];
+    self.navigationItem.titleView = [[UILabel alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 120.0f, 50.0f)];
+    UILabel *  lable = (UILabel *)self.navigationItem.titleView ;
+    [lable setText:@"充  值"];
+    lable.font = [UIFont boldSystemFontOfSize:20];
+    [lable setTextColor:[UIColor whiteColor]];
+    [lable setTextAlignment:NSTextAlignmentCenter];
+    
+    self.myView.backgroundColor=[UIColor colorWithWhite:0.95f alpha:0.9f];
+    
+    [self.validityTextField setValue:[UIFont boldSystemFontOfSize:12] forKeyPath:@"_placeholderLabel.font"];
+    //[self.cvvTextField setValue:[UIFont boldSystemFontOfSize:14] forKeyPath:@"_placeholderLabel.font"];
+    //self.scrollView.backgroundColor=[UIColor colorWithWhite:0.8f alpha:0.9f];
+    
+    self.imageArr=[NSArray arrayWithObjects:@"ps_abc.png",@"ps_bjb.png",@"ps_boc.png",@"ps_ccb.png",@"ps_cebb.png",@"ps_cib.png",@"ps_citic.png",@"ps_cmb.png",@"ps_cmbc.png",@"ps_gdb.png",@"ps_hxb.png",@"ps_icbc.png",@"ps_psbc.png",@"ps_spa.png",@"ps_spdb.png",@"ps_spa.png",@"ps_bsb.png",@"ps_sh.png",nil];
+    
+    self.bankNameArr=[NSArray arrayWithObjects:@"农业银行",@"北京银行",@"中国银行",@"建设银行",@"光大银行",@"兴业银行",@"中信银行",@"招商银行",@"民生银行",@"广东发展银行",@"华夏银行",@"工商银行",@"邮政储蓄银行",@"平安银行",@"浦东发展银行",@"深圳发展银行",@"包商银行",@"上海银行", nil];
+    
+
+    self.bankCodeArr=[NSArray arrayWithObjects:@"ABCCREDIT",@"BCCBCREDIT",@"BOCCREDIT",@"CCBCREDIT",@"EVERBRIGHTCREDIT",@"CIBCREDIT",@"ECITICCREDIT",@"CMBCHINACREDIT",@"CMBCCREDIT",@"GDBCREDIT",@"HXBCREDIT",@"ICBCCREDIT",@"PSBCCREDIT",@"PINGANCREDIT",@"SPDBCREDIT",@"SDBCREDIT",@"BSBCREDIT",@"BOSHCREDIT",nil];
+    
+    
+    
+    self.bankImageView.image=[UIImage imageNamed:@"ps_b.png"];
+    self.moneyLabel.text=[NSString stringWithFormat:@"%@元",self.money];
+    self.bankNameLabel.text=@"请选择银行";
+    
+    
+    
+    UITapGestureRecognizer *tapGes=[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGesAction:)];
+    
+    UITapGestureRecognizer *tapGesView=[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(removeImageAction:)];
+    [self.myView addGestureRecognizer:tapGesView];
+    [self.myView setUserInteractionEnabled:YES];
+    
+    [self.bankNameLabel setUserInteractionEnabled:YES];
+    [self.bankNameLabel addGestureRecognizer:tapGes];
+    
+    
+    _isChooseBank=NO;
+    self.switchButton.on=YES;
+    self.isBind=@"0";
+    
+    self.cardNameTextField.text=self.name;
+    self.IDcardNumberTextField.text=self.IDCard;
+    
+    
+    
+}
+
+
+-(void)tapGesAction:(id)sender
+{
+    self.tableView=[[UITableView alloc] initWithFrame:CGRectMake(0, 0, kSCREEN_WIDTH, 500*kSCREEN_HEIGHT/600.f)];
+    
+    self.tableView.dataSource=self;
+    self.tableView.delegate=self;
+    
+    
+    [self.view addSubview:self.tableView];
+    
+    
+}
+
+-(void)removeImageAction:(id)sender
+{
+    [self.imageView removeFromSuperview];
+    [self.cvnImageView removeFromSuperview];
+}
+
+-(void)isBindAction:(id)sender
+{
+    
+    UISwitch *switchButton=(UISwitch *)sender;
+    BOOL isButtonOn=[switchButton isOn];
+    if (isButtonOn) {
+        self.isBind=@"0";
+    }else
+    {
+        self.isBind=@"1";
+    }
+    
+}
+
+#pragma mark -tableView delegate
+
+
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 1;
+}
+
+-(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return self.imageArr.count;
+    
+}
+
+
+-(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    
+    NSString *identity=@"Cell";
+    UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:identity];
+    if(!cell)
+    {
+        cell=[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:identity];
+    }
+    cell.imageView.image=[UIImage imageNamed:[self.imageArr objectAtIndex:indexPath.row]];
+    cell.textLabel.text=[self.bankNameArr objectAtIndex:indexPath.row];
+    
+    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    
+    return cell;
+
+    
+
+}
+
+
+#pragma mark -  tableView delegate 
+
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    
+    self.bankImageView.image=[UIImage imageNamed:[self.imageArr objectAtIndex:indexPath.row]];
+    self.bankNameLabel.text=[self.bankNameArr objectAtIndex:indexPath.row];
+    [self.tableView removeFromSuperview];
+    
+    self.index=indexPath.row;
+    _isChooseBank=YES;
+    
+    
+}
+#pragma  mark - textfield delegate
+
+
+-(BOOL)textFieldShouldBeginEditing:(UITextField *)textField
+{
+    
+    if (!_isChooseBank) {
+        [self showWarmingWithMessage:@"请选择银行"];
+       // [textField setUserInteractionEnabled:NO];
+        return NO;
+        
+    }else
+    {
+        //[textField setUserInteractionEnabled:YES];
+        return YES;
+    }
+    return NO;
+}
+
+
+
+-(void)textFieldDidEndEditing:(UITextField *)textField
+{
+    NSInteger selectedTag=textField.tag;
+    
+    BOOL isPhoneNumber = [BaseModel isValidPhone:self.cardTelTextField.text];
+    BOOL isIDCard = [BaseModel Chk18PaperId:self.IDcardNumberTextField.text];
+    
+    if (!_isChooseBank) {
+        [self showWarmingWithMessage:@"请选择银行"];
+        return;
+        
+    }
+    
+    if (selectedTag==102 && self.IDcardNumberTextField.text.length==kTextLengthZero)
+    {
+        [self showWarmingWithMessage:@"身份证号不能为空"];
+        return;
+    }
+    if (selectedTag==102 && !isIDCard) {
+        [self showWarmingWithMessage:@"身份证号码有误"];
+        return;
+    }
+    if (selectedTag==103 && self.cardNameTextField.text.length ==kTextLengthZero) {
+        [self showWarmingWithMessage:@"请输入持卡人的姓名"];
+        return;
+    }
+    if (selectedTag==104 && self.cardCodeTextField.text.length == kTextLengthZero) {
+        [self showWarmingWithMessage:@"请输入信用卡卡号"];
+        return;
+    }
+    if (selectedTag==105 && self.validityTextField.text.length==kTextLengthZero) {
+        [self showWarmingWithMessage:@"请输入信用卡有效年月"];
+        return;
+    }
+    if (selectedTag==106 && self.cvvTextField.text.length==kTextLengthZero) {
+        [self showWarmingWithMessage:@"请输入信用卡背面CVN码"];
+        return;
+        
+    }
+    if (selectedTag==101 && self.cardTelTextField.text.length == kTextLengthZero) {
+        [self showWarmingWithMessage:@"手机号不能为空"];
+        return;
+    }
+    
+    if (selectedTag==101 && !isPhoneNumber) {
+        [self showWarmingWithMessage:@"手机号码有误"];
+        return;
+    }
+
+    
+    
+}
+
+-(void)helpAction:(id)sender
+{
+    count++;
+    if (count%2!=0) {
+        self.imageView=[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, kSCREEN_WIDTH,250*kSCREEN_HEIGHT/600.f)];
+        self.imageView.image=[UIImage imageNamed:@"helpCard.png"];
+        [self.view addSubview:self.imageView];
+    }else
+    {
+        [self.imageView removeFromSuperview];
+        
+    }
+   
+    
+}
+
+-(void)helpCVN2Action:(id)sender
+{
+    countCVN2++;
+    if (countCVN2%2!=0) {
+        self.cvnImageView=[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, kSCREEN_WIDTH, 250*kSCREEN_HEIGHT/600.f)];
+        self.cvnImageView.image=[UIImage imageNamed:@"CVN2.png"];
+        [self.view addSubview:self.cvnImageView];
+        
+    }else
+    {
+        [self.cvnImageView removeFromSuperview];
+        
+    }
+}
+
+- (void)setKeyBoard
+{
+    NSArray *tfArr = [NSArray arrayWithObjects: _cardNameTextField,_IDcardNumberTextField,_cardCodeTextField,_validityTextField, _cvvTextField,_cardTelTextField,nil];
+    
+    [IQKeyboardManager sharedManager];
+    
+    for (int i = 0; i < tfArr.count; i++) {
+        UITextField *tf = (UITextField *)[tfArr objectAtIndex:i];
+        tf.delegate = self;
+        [tf addPreviousNextDoneOnKeyboardWithTarget:self
+                                     previousAction:@selector(previousClicked:)
+                                         nextAction:@selector(nextClicked:)
+                                         doneAction:@selector(doneClicked:)];
+        //First textField
+        if (i == 0)
+        {
+            [tf setEnablePrevious:NO next:YES];
+        }
+        //Last textField
+        else if(i== tfArr.count - 1)
+        {
+            [tf setEnablePrevious:YES next:NO];
+        }
+    }
+}
+
+
+#pragma mark - toolBarItemAction
+
+-(void)nextClicked:(UISegmentedControl*)segmentedControl
+{
+    [(UITextField*)[self.view viewWithTag:selectedTextFieldTag+1] becomeFirstResponder];
+}
+
+-(void)doneClicked:(UIBarButtonItem*)barButton
+{
+    [self.view endEditing:YES];
+}
+
+-(void)previousClicked:(UISegmentedControl*)segmentedControl
+{
+    [(UITextField*)[self.view viewWithTag:selectedTextFieldTag-1] becomeFirstResponder];
+}
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    
+}
+
+
+
+
+
+-(void)nextStepAction:(id)sender
+{
+    [self.view endEditing:YES];
+    BOOL isPhoneNumber = [BaseModel isValidPhone:self.cardTelTextField.text];
+    //BOOL isIDCard = [BaseModel Chk18PaperId:self.IDcardNumberTextField.text];
+    
+    if (!_isChooseBank) {
+        [self showWarmingWithMessage:@"请选择银行"];
+        return;
+        
+    }
+    
+    if (self.cardNameTextField.text.length ==kTextLengthZero) {
+        [self showWarmingWithMessage:@"请输入您的姓名"];
+        return;
+    }
+    if (self.IDcardNumberTextField.text.length==kTextLengthZero)
+    {
+        [self showWarmingWithMessage:@"身份证号不能为空"];
+        return;
+    }
+//    if (!isIDCard) {
+//        [self showWarmingWithMessage:@"身份证号码有误"];
+//        return;
+//    }
+    if (self.cardCodeTextField.text.length == kTextLengthZero) {
+        [self showWarmingWithMessage:@"请输入信用卡卡号"];
+        return;
+    }
+    if (self.validityTextField.text.length==kTextLengthZero) {
+        [self showWarmingWithMessage:@"请输入信用卡有效年月"];
+        return;
+    }
+    if (self.cvvTextField.text.length==kTextLengthZero) {
+        [self showWarmingWithMessage:@"请输入信用卡背面CVN2码"];
+        return;
+        
+    }
+
+    if (self.cardTelTextField.text.length == kTextLengthZero) {
+        [self showWarmingWithMessage:@"手机号不能为空"];
+        return;
+    }
+    
+    if (!isPhoneNumber) {
+        [self showWarmingWithMessage:@"手机号码有误"];
+        return;
+    }
+    
+    [UIComponentService showHudWithStatus:kPleaseWait];
+    [self performSelector:@selector(payYiBaoRequest) withObject:nil afterDelay:kDelayTime];
+    
+    
+    
+}
+
+
+
+-(void) payYiBaoRequest
+{
+    YiBaoPayChannelDO *yibaoChannelDO=[[YiBaoPayChannelDO alloc] init];
+    
+    yibaoChannelDO.trancode=kTrancode_YibaoPay;
+    yibaoChannelDO.delegate=self;
+    yibaoChannelDO.phoneNumber=[User shareUser].phoneNumber;
+    yibaoChannelDO.merType=@"02";
+    yibaoChannelDO.cardWay=@"3";    //易宝信用卡为 3，   易宝借记卡为 2  网上有名信用卡 1
+    yibaoChannelDO.orderAmt=[NSString stringWithFormat:@"%d",(int)([self.money doubleValue]*100.f)];
+    NSLog(@"money=%@",yibaoChannelDO.orderAmt);
+    yibaoChannelDO.cardTel=self.cardTelTextField.text;
+    yibaoChannelDO.cardType=@"IDCARD";
+    yibaoChannelDO.cardNumber=self.IDcardNumberTextField.text;
+    yibaoChannelDO.cardName=self.cardNameTextField.text;
+    yibaoChannelDO.cardCode=self.cardCodeTextField.text;
+    yibaoChannelDO.ferID=[self.bankCodeArr objectAtIndex:self.index];
+    yibaoChannelDO.expireYear= [@"20" stringByAppendingString:[self.validityTextField.text substringFromIndex:2]];
+    
+    NSLog(@"yibaoChannelDO.expireYear---%@",yibaoChannelDO.expireYear);
+    yibaoChannelDO.expireMonth=[self.validityTextField.text substringToIndex:2];
+    
+    NSLog(@"yibaoChannelDO.expireMonth---%@",yibaoChannelDO.expireMonth);
+    
+    yibaoChannelDO.cvv=self.cvvTextField.text;
+    yibaoChannelDO.issuer=self.bankNameLabel.text;       //发卡行
+    yibaoChannelDO.isBind=self.isBind;
+    yibaoChannelDO.imagePath=self.imagePath;
+    
+    [yibaoChannelDO payRequest];
+    
+    
+}
+
+
+
+
+
+
+#pragma mark - yibaoDeleagate
+
+
+
+-(void)payRequestWithSuccess:(NSString *)message andYibaoPay:(YiBaoPayChannelDO *)yibaoPayChannelDO
+{
+    [UIComponentService showSuccessHudWithStatus:message];
+    self.yibaoPayChannelDO=yibaoPayChannelDO;
+    
+    [self performSegueWithIdentifier:@"toYibaoNextSegue" sender:self];
+    
+}
+
+-(void)payRequestWithFail:(NSString *)message
+{
+    [UIComponentService showFailHudWithStatus:message];
+}
+
+
+
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string;
+{
+    if ([string isEqualToString:@"\n"])
+    {
+        return YES;
+    }
+    NSString * toBeString = [textField.text stringByReplacingCharactersInRange:range withString:string];
+    
+    if (self.IDcardNumberTextField == textField)
+    {
+        if ([toBeString length] > 18) {
+            textField.text = [toBeString substringToIndex:18];
+            return NO;
+        }
+    }
+    if (self.validityTextField == textField) {
+        if ([toBeString length]>4) {
+            textField.text=[toBeString substringToIndex:4];
+            return NO;
+        }
+    }
+
+    if (self.cvvTextField ==textField) {
+        if ([toBeString length]>3) {
+            textField.text=[toBeString substringToIndex:3];
+            return NO;
+            
+        }
+    }
+    if (self.cardTelTextField==textField) {
+        if ([toBeString length]>11) {
+            textField.text=[toBeString substringToIndex:11];
+            return NO;
+        }
+    }
+    
+    return YES;
+    
+
+}
+
+@end

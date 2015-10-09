@@ -1,0 +1,40 @@
+//
+//  FateListDO.h
+//  BusinessPay
+//
+//  Created by SHANGYITONG on 15-2-28.
+//  Copyright (c) 2015年 Tears. All rights reserved.
+//
+
+#import "BaseModel.h"
+
+
+@protocol FateListDelegate;
+
+@interface FateListDO : BaseModel
+
+@property (nonatomic,assign) id <FateListDelegate> delegate;
+
+@property (nonatomic,strong) NSMutableArray *temArr;
+
+@property (nonatomic,strong) NSString *feeRateNO;
+@property (nonatomic,strong) NSString *feeRate;
+@property (nonatomic,strong) NSString *feeRateDesc;
+@property (nonatomic,strong) NSString *price;
+
+//@property (nonatomic,strong) NS
+
+-(void) fateListInquaryRequest;
+
+@end
+
+
+
+@protocol FateListDelegate <NSObject>
+
+- (void)fateListInquarySuccessWithMessage:(NSString *)message;
+
+- (void)fateListInquaryFieldWithMessage:(NSString *)message;
+
+
+@end

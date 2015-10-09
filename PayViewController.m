@@ -1,0 +1,810 @@
+//
+//  PayViewController.m
+//  BusinessPay
+//
+//  Created by Tears on 14-4-24.
+//  Copyright (c) 2014年 Tears. All rights reserved.
+//
+
+#import "PayViewController.h"
+#import "RealNameVerificationViewController.h"
+#import "MyAccountViewController.h"
+#import "WithDrawViewController.h"
+#import "TranferAccountViewController.h"
+//#import "CodeCreateViewController.h"
+#import "LoginViewController.h"
+#import "CodeingViewController.h"
+#import "AESCrypt.h"
+#import "ScanViewController.h"
+#import "TranferAccount2ViewController.h"
+#import "NSData+AES256.h"
+#import "RechangeViewController.h"
+#import "LLLockViewController.h"
+#import "RadingParticularViewController.h"
+//#import "LoginViewController.h"
+#import "UMSocial.h"
+
+@interface PayViewController ()
+{
+    NSInteger _buttonTag;
+    NSArray *imageArray;
+    //TranferAccount2ViewController *tranfer;
+    LLLockViewType lockViewtype;
+}
+
+@property (nonatomic,strong) LoginViewController *loginVC;
+
+
+@property (nonatomic) CGSize size;
+
+-(IBAction)getOutAction:(id)sender;
+
+
+@end
+
+@implementation PayViewController
+
+
+
+//-(void)updateViewConstraints{
+//    [super updateViewConstraints];
+//    self.viewHeight.constant=CGRectGetHeight([UIScreen mainScreen].bounds);
+//}
+-(void)viewDidLayoutSubviews
+{
+    [self.myScrollView setScrollEnabled:YES];
+    self.myScrollView.contentSize = CGSizeMake(self.view.frame.size.width, 320+10);
+    self.myScrollView.showsHorizontalScrollIndicator=NO;
+    
+    
+    
+}
+-(void)viewWillAppear:(BOOL)animated
+{
+    
+}
+
+-(IBAction)clickOnBtn:(id)sender{
+    
+    [self showWarmingWithMessage:@"即将开通!"];
+    
+    
+}
+//-(void)viewDidAppear:(BOOL)animated
+//{
+//    [super viewDidAppear:YES];
+//    
+//    [self.navigationController.navigationBar setBackgroundImage:[UIImage imageNamed:@"titleNew.png"] forBarMetrics:UIBarMetricsDefault];
+//    
+//    
+//}
+- (UIImage *)scaleToSize:(UIImage *)img size:(CGSize)size{
+    UIGraphicsBeginImageContext(size);
+    [img drawInRect:CGRectMake(0, 0, size.width, size.height)];
+    UIImage* scaledImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return scaledImage;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    for ( int i = 101; i <= 110; i++) {
+        UIButton * button = (UIButton *)[self.view viewWithTag:i];
+        button.layer.masksToBounds = YES;
+        button.layer.cornerRadius = 6;
+    }
+    
+    
+    
+    
+    
+    
+    UIImage *title_bg = [UIImage imageNamed:@"titleNew.png"];  //获取图片
+    //    CGSize titleSize = self.navigationController.navigationBar.bounds.size;  //获取Navigation Bar的位置和大小
+    //    title_bg = [self scaleToSize:title_bg size:titleSize];//设置图片的大小与Navigation Bar相同
+    [self.navigationController.navigationBar
+     setBackgroundImage:title_bg
+     forBarMetrics:UIBarMetricsDefault];
+    self.navigationController.navigationBar.clipsToBounds = YES;
+    self.navigationItem.titleView = [[UILabel alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 120.0f, 50.0f)];
+    UILabel *  lable = (UILabel *)self.navigationItem.titleView ;
+    [lable setText:@"钱海钱包"];
+    lable.font = [UIFont boldSystemFontOfSize:20];
+    [lable setTextColor:[UIColor whiteColor]];
+    [lable setTextAlignment:NSTextAlignmentCenter];
+//    self.navigationController.navigationBar.clipsToBounds = YES;
+    imageArray=[NSArray arrayWithObjects:@"1.png",@"2.png" ,@"3.png",@"4.png",@"5.png",@"6.png",nil];
+
+    [self.imagePlayerView initWithCount:imageArray.count delegate:self];
+    self.imagePlayerView.scrollInterval=5.0f;
+    self.imagePlayerView.pageControlPosition=ICPageControlPosition_BottomCenter;
+    self.imagePlayerView.hidePageControl=NO;
+    
+  //根据推送的消息跳转界面
+    [self pushNews];
+    
+    
+}
+
+
+
+
+-(void)pushNews
+{
+    if ([[User shareUser].pushType isEqualToString:@"1"]) {
+        if ([[User shareUser].businessType isEqualToString:@"1"]) {
+            if ([[User shareUser].markStutas isEqualToString:@"2"]) {
+                //[self performSegueWithIdentifier:@"realNameSegue" sender:self];
+                [self reSetPustValue];
+            }else
+            {
+                [self reSetPustValue];
+                return;
+            }
+        }else if ([[User shareUser].businessType isEqualToString:@"2"])
+        {
+            if ([[User shareUser].markStutas isEqualToString:@"2"]) {
+                //[self performSegueWithIdentifier:@"phoneNumberUploadSegue" sender:self];
+                [self reSetPustValue];
+            }else
+            {
+                [self reSetPustValue];
+                return;
+            }
+        }else if ([[User shareUser].businessType isEqualToString:@"3"])
+        {
+            if ([[User shareUser].markStutas isEqualToString:@"2"]) {
+                [self performSegueWithIdentifier:@"bankCardUploadSegue" sender:self];
+                [self reSetPustValue];
+            }else
+            {
+                [self reSetPustValue];
+                return;
+            }
+        }
+        
+    }
+    else if ([[User shareUser].pushType isEqualToString:@"2"] ||[[User shareUser].pushType isEqualToString:@"3"])
+    {
+        [self performSegueWithIdentifier:@"radingSegue" sender:self];
+    }
+    
+}
+
+-(void)reSetPustValue
+{
+    [User shareUser].pushType=nil;
+    [User shareUser].businessType=nil;
+    [User shareUser].markStutas=nil;
+}
+
+
+-(NSInteger)numberOfItems{
+    return imageArray.count;
+}
+
+
+-(void)imagePlayerView:(ImagePlayerView *)imagePlayerView loadImageForImageView:(UIImageView *)imageView index:(NSInteger)index
+{
+    imageView.image=[UIImage imageNamed:[imageArray objectAtIndex:index]];
+}
+
+
+
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    if ([segue.identifier isEqualToString:@"realNameSegue"]) {
+        RealNameVerificationViewController * realNameVC = (RealNameVerificationViewController *)segue.destinationViewController;
+        realNameVC.type = RealNameVerificationType_TheFirst;
+    }
+    if ([segue.identifier isEqualToString:@"codeSegue"]) {
+        CodeingViewController *codeCreateViewContr=(CodeingViewController *)segue.destinationViewController;
+        NSString *PhoneNOAndName;
+        PhoneNOAndName=[[User shareUser].phoneNumber stringByAppendingString:[User shareUser].userName];
+        
+        NSString *s=[NSData AES256EncryptWithPlainText:PhoneNOAndName];
+        
+        NSString *data=[@"1" stringByAppendingFormat:@"%@",s];
+        
+        
+        codeCreateViewContr.codeContent=data;
+        codeCreateViewContr.name=[User shareUser].userName;
+        
+        
+    }
+    if ([segue.identifier isEqualToString:@"tranfer2Segue"]) {
+        TranferAccount2ViewController *tranfer=(TranferAccount2ViewController *)segue.destinationViewController;
+        tranfer.phoneNumber=_stringValueBefore;
+        tranfer.name=_stringValueBehind;
+        
+    }
+    if ([segue.identifier isEqualToString:@"reChangeSegue"]) {
+        RechangeViewController *rechangeVC=(RechangeViewController *)segue.destinationViewController;
+        rechangeVC.temArr=_payPhoneMoneyDo.Arr;
+        
+    }
+    if ([segue.identifier isEqualToString:@"radingSegue"]) {
+        RadingParticularViewController *radParVC=(RadingParticularViewController *)segue.identifier;
+        radParVC.algno=[User shareUser].markStutas;
+    }
+    
+    
+    
+}
+
+- (IBAction)buttonClickAction:(UIButton *)sender {
+    
+   [self loginRequest];
+    
+    
+    _buttonTag = sender.tag;
+    
+    if (_buttonTag == 123)
+    {
+        [UMSocialSnsService presentSnsIconSheetView:self
+                                             appKey:@"5569729067e58e402f007b48"
+                                          shareText:[NSString stringWithFormat:@"来自%@分享%@",[User shareUser].phoneNumber,SEVERURL]
+                                         shareImage:[UIImage imageNamed:@"code.png"]
+                                    shareToSnsNames:[NSArray arrayWithObjects:UMShareToWechatSession,UMShareToWechatTimeline,UMShareToQzone,UMShareToSina,UMShareToQQ,UMShareToTencent,UMShareToSms,UMShareToRenren,nil]
+                                           delegate:self];
+        
+        
+        
+        [UMSocialData defaultData].extConfig.qqData.url = @"https://download.qhno1.com/down.html";
+        [UMSocialData defaultData].extConfig.qzoneData.url = @"https://download.qhno1.com/down.html";
+    }
+    
+    
+    
+    
+    
+    
+    
+    if ([User shareUser].status==0) {
+        if ([User shareUser].verificationStatus==0) {
+//           if (_buttonTag==103||_buttonTag==105||_buttonTag==108 ||_buttonTag==109) {
+            
+                if([User shareUser].phoneNumberChange==YES)
+                {if (_buttonTag==101||_buttonTag==102||_buttonTag==103||_buttonTag==105||_buttonTag==106||_buttonTag==107||_buttonTag==108 ||_buttonTag==109) {
+                    _phoneNumberChangeAlertView = [[UIAlertView alloc]initWithTitle:nil message:@"手机号码变更审核通过，请重新登录" delegate:self cancelButtonTitle:nil otherButtonTitles:@"确定", nil];
+                    [_phoneNumberChangeAlertView show];
+                    [User shareUser].phoneNumberChange=NO;}
+                }
+                if ([User shareUser].loginNum==0) {
+                    if (_buttonTag==101||_buttonTag==102||_buttonTag==103||_buttonTag==105||_buttonTag==106||_buttonTag==107||_buttonTag==108 ||_buttonTag==109) {
+                    _addSuccessAlertView = [[UIAlertView alloc]initWithTitle:nil message:@"资料审核通过，请重新登录并设置支付密码" delegate:self cancelButtonTitle:nil otherButtonTitles:@"确定", nil];
+                        [_addSuccessAlertView show];}
+
+                }
+                
+//           }
+            
+             if (_buttonTag==110)
+            {
+                [self merchantRequest];
+            }
+            else
+            {
+                [self performSegueWithButtonTag];
+            }
+
+        }
+    }else if ([User shareUser].status==1)
+    {
+//        if(_buttonTag==103||_buttonTag==105||_buttonTag==108 ||_buttonTag==109){
+            [UIComponentService showMessageAlertView:@"提示" message:@"您的资料正在审核中，请待审核通过后再试！"];
+            return;
+ 
+    }else if ([User shareUser].status==2)
+    {
+        if ([User shareUser].reChangeStutas==1) {
+            if (_buttonTag!=102) {
+                _reChangeAlertView=[[UIAlertView alloc] initWithTitle:@"提示" message:@"尊敬的用户，请先充值再操作！" delegate:self cancelButtonTitle:nil otherButtonTitles:@"确定", nil];
+                [_reChangeAlertView show];
+                
+            }else
+            {
+                [self performSegueWithButtonTag];
+            }
+        }else
+        {
+            _needAddAlertView=[[UIAlertView alloc] initWithTitle:@"提示" message:@"为了您账户安全！请补全资料进行实名认证再进行操作" delegate:self cancelButtonTitle:nil otherButtonTitles:@"确定", nil];
+            [_needAddAlertView show];
+        }
+        
+//        if(_buttonTag==103||_buttonTag==105||_buttonTag==108 ||_buttonTag==109 ||_buttonTag==106)
+//        {
+        
+//
+//        }else if (_buttonTag==110)
+//        {
+//            [self merchantRequest];
+//        }else
+//        {
+//            [self performSegueWithButtonTag];
+//        }
+    }else if ([User shareUser].status==3)
+    {
+        if (_buttonTag==103) {
+            [UIComponentService showMessageAlertView:nil message:@"变更银行卡申请正在审核中，请稍后再试"];
+        }else if(_buttonTag==110)
+        {
+            [self merchantRequest];
+        }else
+        {
+            [self performSegueWithButtonTag];
+            
+        }
+    }else if ([User shareUser].status==4)
+    {
+        if(_buttonTag==101||_buttonTag==102||_buttonTag==103||_buttonTag==107||_buttonTag==105||_buttonTag==108 ||_buttonTag==109 ||_buttonTag==106)
+        {
+        
+          [UIComponentService showMessageAlertView:nil message:@"变更手机号码申请正在审核中，请稍后再试"];
+          return;
+        }else if (_buttonTag==110)
+        {
+            [self merchantRequest];
+        }else
+        {
+            [self performSegueWithButtonTag];
+        }
+    }else if ([User shareUser].status==-1)
+    {
+//        if(_buttonTag==103||_buttonTag==105||_buttonTag==108 ||_buttonTag==109 ||_buttonTag==106)
+//        {
+        
+            _addFieldAlertView=[[UIAlertView alloc] initWithTitle:@"提示" message:self.loginMessage delegate:self cancelButtonTitle:nil otherButtonTitles:@"确定", nil];
+            [_addFieldAlertView show];
+//        }else if (_buttonTag==110)
+//        {
+//            [self merchantRequest];
+        }else
+//        {
+//            [self performSegueWithButtonTag];
+//        }
+//    }
+//    else
+    {
+        [self showWarmingWithMessage:@"网络请求错误"];
+    }
+    
+    
+    
+}
+
+-(void)getOutAction:(id)sender
+{
+    _getOutAlertView=[[UIAlertView alloc] initWithTitle:nil message:@"确定退出 ?" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
+    [_getOutAlertView show];
+    
+}
+
+-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if (alertView==_phoneNumberChangeAlertView || alertView ==_addSuccessAlertView) {
+        [self performSegueWithIdentifier:@"payToLoginSegue" sender:self];
+    }else if (alertView ==_getOutAlertView)
+    {
+        if (buttonIndex==0) {
+            return;
+        }else
+        {
+             [self performSegueWithIdentifier:@"payToLoginSegue" sender:self];
+        }
+    }else if (alertView==_reChangeAlertView)
+    {
+        [self performSegueWithIdentifier:@"orderPaySegue" sender:self];
+    }
+    else
+    {
+        [self performSegueWithIdentifier:@"realNameSegue" sender:self];
+        
+    }
+
+    
+    
+}
+
+
+
+- (void)loginRequest
+{
+    _loginDO = [[LoginDO alloc] init];
+    _loginDO.delegate=self;
+    
+    _loginDO.userNamePhoneNumber = [User shareUser].phoneNumber;
+    _loginDO.passWord            = [User shareUser].passWord ;
+    
+    NSLog(@"password=%@",[User shareUser].passWord);
+    _loginDO.trancode            = kTrancode_Login ;
+    _loginDO.termno              = kNil;
+    _loginDO.SIMNumber           = kSIMNumber ;
+    _loginDO.appType             = kAppType ;
+    [_loginDO loginRequest];
+}
+
+- (void)performSegueWithButtonTag
+{
+    switch (_buttonTag) {
+        case 101:
+           [self performSegueWithIdentifier:@"myAccountSuege" sender:self];
+            break;
+        case 102:
+            [self performSegueWithIdentifier:@"orderPaySegue" sender:self];
+            break;
+        case 103:
+            [self performSegueWithIdentifier:@"withDrawsegue" sender:self];
+            break;
+        case 104:
+            [self performSegueWithIdentifier:@"personCenter" sender:self];
+            break;
+        case 105:
+            [self performSegueWithIdentifier:@"tranferSegue" sender:self];
+            break;
+        case 106:
+            [self performSegueWithIdentifier:@"orderInquirySegue" sender:self];
+            break;
+        case 107:
+            [self performSegueWithIdentifier:@"fateSegue" sender:self];
+            break;
+        case 108:
+            [self performSelector:@selector(payPhoneMoney) withObject:nil afterDelay:kDelayTime];
+            break;
+        case 109:
+            
+            [self performSelector:@selector(scanBtnAction) withObject:nil afterDelay:0];
+            break;
+        case 110:
+            
+            break;
+        default:
+            break;
+    }
+}
+
+-(void)scanBtnAction
+{
+    num = 0;
+    upOrdown = NO;
+    //初始话ZBar
+    ZBarReaderViewController * reader = [ZBarReaderViewController new];
+    //设置代理
+    reader.readerDelegate = self;
+    //支持界面旋转
+    reader.supportedOrientationsMask = ZBarOrientationMaskAll;
+    reader.showsHelpOnFail = NO;
+    reader.scanCrop = CGRectMake(0.1, 0.2, 0.8, 0.8);//扫描的感应框
+    ZBarImageScanner * scanner = reader.scanner;
+    [scanner setSymbology:ZBAR_I25
+                   config:ZBAR_CFG_ENABLE
+                       to:0];
+   if (kSCREEN_WIDTH==320) {
+        UIView * view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 420)];
+        view.backgroundColor = [UIColor clearColor];
+        reader.cameraOverlayView = view;
+        
+        
+        UILabel * label = [[UILabel alloc] initWithFrame:CGRectMake(20, 20, 280, 40)];
+        label.text = @"请将扫描的二维码至于下面的框内\n谢谢！";
+        label.textColor = [UIColor whiteColor];
+        label.textAlignment = 1;
+        label.lineBreakMode = 0;
+        label.numberOfLines = 2;
+        label.backgroundColor = [UIColor clearColor];
+        [view addSubview:label];
+        
+        UIImageView * image = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"pick_bg.png"]];
+        image.frame = CGRectMake(20, 80, 280, 280);
+        [view addSubview:image];
+        
+        
+        _line = [[UIImageView alloc] initWithFrame:CGRectMake(30, 10, 220, 2)];
+        _line.image = [UIImage imageNamed:@"line.png"];
+        [image addSubview:_line];
+
+    }else if (kSCREEN_WIDTH==375)
+    {
+        UIView * view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 375, 500)];
+        view.backgroundColor = [UIColor clearColor];
+        reader.cameraOverlayView = view;
+        
+        
+        UILabel * label = [[UILabel alloc] initWithFrame:CGRectMake(48, 100, 280, 40)];
+        label.text = @"请将扫描的二维码至于下面的框内\n谢谢！";
+        label.textColor = [UIColor whiteColor];
+        label.textAlignment = 1;
+        label.lineBreakMode = 0;
+        label.numberOfLines = 2;
+        label.backgroundColor = [UIColor clearColor];
+        [view addSubview:label];
+        
+        UIImageView * image = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"pick_bg.png"]];
+        image.frame = CGRectMake(48, 200, 280, 280);
+        [view addSubview:image];
+        
+        
+        _line = [[UIImageView alloc] initWithFrame:CGRectMake(30, 10, 220, 2)];
+        _line.image = [UIImage imageNamed:@"line.png"];
+        [image addSubview:_line];
+    }else if(kSCREEN_WIDTH==414)
+    {
+        UIView * view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 414, 600)];
+        view.backgroundColor = [UIColor clearColor];
+        reader.cameraOverlayView = view;
+        
+        
+        UILabel * label = [[UILabel alloc] initWithFrame:CGRectMake(67, 120, 280, 40)];
+        label.text = @"请将扫描的二维码至于下面的框内\n谢谢！";
+        label.textColor = [UIColor whiteColor];
+        label.textAlignment = 1;
+        label.lineBreakMode = 0;
+        label.numberOfLines = 2;
+        label.backgroundColor = [UIColor clearColor];
+        [view addSubview:label];
+        
+        UIImageView * image = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"pick_bg.png"]];
+        image.frame = CGRectMake(67, 250, 280, 280);
+        [view addSubview:image];
+        
+        
+        _line = [[UIImageView alloc] initWithFrame:CGRectMake(30, 10, 220, 2)];
+        _line.image = [UIImage imageNamed:@"line.png"];
+        [image addSubview:_line];
+
+    }
+        //定时器，设定时间过1.5秒，
+    timer = [NSTimer scheduledTimerWithTimeInterval:.02 target:self selector:@selector(animation1) userInfo:nil repeats:YES];
+    
+    [self presentViewController:reader animated:YES completion:^{
+        
+    }];
+}
+-(void)animation1
+{
+    if (kSCREEN_WIDTH==320) {
+        if (upOrdown == NO) {
+            num ++;
+            _line.frame = CGRectMake(30, 10+2*num, 220, 2);
+            if (2*num == 260) {
+                upOrdown = YES;
+            }
+        }
+        else {
+            num --;
+            _line.frame = CGRectMake(30, 10+2*num, 220, 2);
+            if (num == 0) {
+                upOrdown = NO;
+            }
+        }
+
+    }else if(kSCREEN_WIDTH==375)
+    {
+        if (upOrdown == NO) {
+            num ++;
+            _line.frame = CGRectMake(30, 10+2*num, 220, 2);
+            if (2*num == 260) {
+                upOrdown = YES;
+            }
+        }
+        else {
+            num --;
+            _line.frame = CGRectMake(30, 10+2*num, 220, 2);
+            if (num == 0) {
+                upOrdown = NO;
+            }
+        }
+
+    }else if (kSCREEN_WIDTH==414)
+    {
+        if (upOrdown == NO) {
+            num ++;
+            _line.frame = CGRectMake(30, 10+2*num, 220, 2);
+            if (2*num == 260) {
+                upOrdown = YES;
+            }
+        }
+        else {
+            num --;
+            _line.frame = CGRectMake(30, 10+2*num, 220, 2);
+            if (num == 0) {
+                upOrdown = NO;
+            }
+        }
+
+    }
+    
+
+}
+-(void)imagePickerControllerDidCancel:(UIImagePickerController *)picker
+{
+    [timer invalidate];
+    _line.frame = CGRectMake(30, 10, 220, 2);
+    num = 0;
+    upOrdown = NO;
+    [picker dismissViewControllerAnimated:YES completion:^{
+        [picker removeFromParentViewController];
+    }];
+}
+-(void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info
+{
+    
+     //[self accountRequestWithPhoneNumber:[User shareUser].phoneNumber];
+    [timer invalidate];
+    _line.frame = CGRectMake(30, 10, 220, 2);
+    num = 0;
+    upOrdown = NO;
+    
+    
+    
+    UIImage * image = [info objectForKey:UIImagePickerControllerOriginalImage];
+    //初始化
+    ZBarReaderController * read = [ZBarReaderController new];
+    //设置代理
+    read.readerDelegate = self;
+    CGImageRef cgImageRef = image.CGImage;
+    ZBarSymbol * symbol = nil;
+    id <NSFastEnumeration> results = [read scanImage:cgImageRef];
+    for (symbol in results)
+    {
+        break;
+    }
+    NSString * result;
+    NSString *firstString;
+    NSString *stringValue;
+    NSString *firstResult;
+    
+    
+    if ([symbol.data canBeConvertedToEncoding:NSShiftJISStringEncoding])
+        
+    {
+        firstResult = [NSString stringWithCString:[symbol.data cStringUsingEncoding: NSShiftJISStringEncoding] encoding:NSUTF8StringEncoding];
+        firstString=[firstResult substringToIndex:1];
+        result = [firstResult substringWithRange:NSMakeRange(1, firstResult.length-1)];
+        stringValue=[NSData AES256DecryptWithCiphertext:result];
+        
+        if([firstString isEqualToString:@"1"]){
+        _stringValueBefore=[stringValue substringWithRange:NSMakeRange(0, 11)];
+        _stringValueBehind=[stringValue substringWithRange:NSMakeRange(11, stringValue.length-11)];
+        }
+        
+    }
+    else
+    {
+        result = symbol.data;
+        
+        result=[result substringWithRange:NSMakeRange(0, 1)];
+        stringValue=[NSData AES256DecryptWithCiphertext:result];
+        _stringValueBefore=[stringValue substringWithRange:NSMakeRange(1, 11)];
+        _stringValueBehind=[stringValue substringWithRange:NSMakeRange(11, stringValue.length-12)];
+    }
+    
+    
+    [picker dismissViewControllerAnimated:YES completion:^{
+    
+        [picker removeFromParentViewController];
+       
+     }];
+    
+    if (![firstString isEqualToString:@"1"]) {
+        [[UIApplication sharedApplication]openURL:[NSURL URLWithString:firstResult]];
+    }else{
+      [self pushToTranfer];
+    }
+}
+
+-(void) pushToTranfer
+{
+    [self performSegueWithIdentifier:@"tranfer2Segue" sender:self];
+    
+}
+
+
+
+- (void)verifyRequest
+{
+    //[UIComponentService showHudWithStatus:kPleaseWait];
+    [self performSelector:@selector(merchantRequest) withObject:nil afterDelay:kDelayTime];
+}
+
+- (void) accountRequestWithPhoneNumber:(NSString *)phoneNumber
+{
+    _accountDO=[[AccountDO alloc] init];
+    _accountDO.delegate=self;
+    _accountDO.phoneNumber=phoneNumber;
+    _accountDO.trancode=kTrancode_AccountMessage;
+    
+    [_accountDO accountRequest];
+    
+}
+
+- (void)merchantRequest
+{
+    _merchantDO = [[MerchantDO alloc] init];
+    _merchantDO.delegate = self;
+    _merchantDO.termno = [User shareUser].termno;
+    _merchantDO.termType = kTermType;
+    _merchantDO.phoneNumber = [User shareUser].phoneNumber;
+    _merchantDO.trancode = kTrancode_MerchantData;
+    [_merchantDO merchantInformationInquiryRequest];
+}
+
+
+- (void)payPhoneMoney
+{
+    _payPhoneMoneyDo=[[PayPhonemoneyDO alloc] init];
+    _payPhoneMoneyDo.delegate=self;
+    _payPhoneMoneyDo.trancode=kTrancode_payPhoneMoney;
+    
+    [_payPhoneMoneyDo payMoneyRequest];
+}
+
+#pragma mark - loginRequestDelegate
+
+
+-(void)loginSuccessWithMessage:(NSString *)message
+{
+    self.loginMessage=message;
+}
+
+-(void)loginFildWithMessage:(NSString *)message
+{
+ 
+    
+}
+
+#pragma mark - merchantDelegate
+
+- (void)merchantInformationInquirySuccessWithMessage: (NSString *)message andMerchantDO:(MerchantDO *)merchantDO
+{
+    int status = [merchantDO.realNameStatus intValue];
+    
+    if (status == VerificationStatusType_Passed ) {
+           // [UIComponentService showSuccessHudWithStatus:message];
+        if (_buttonTag==110) {
+            [self performSegueWithIdentifier:@"codeSegue" sender:self];
+        }
+            [self performSegueWithButtonTag];
+            
+            
+        } else {
+            //[self showWarmingWithMessage:@"您还未实名认证，请先实名认证！"];
+            [UIComponentService showMessageAlertView:@"提示" message:@"为了您账户安全！请补全资料进行实名认证再进行操作！"];
+            [UIComponentService showSuccessHudWithStatus:message];
+            [self performSegueWithIdentifier:@"realNameSegue" sender:self];
+        }
+    
+}
+
+//-(void)merchantBankInformationInquirySuccessWithMessage:(NSString *)message andMerchantDO:(MerchantDO *)merchantDO
+//{
+//    [UIComponentService showSuccessHudWithStatus:message];
+//}
+- (void)merchantInformationInquiryFieldWithMessage: (NSString *)message
+{
+    [UIComponentService showFailHudWithStatus:message];
+}
+
+
+
+#pragma mark - payPhoneMoneyDelegate
+
+-(void)payMoneyRequestSuccessWithMessage:(NSString *)message
+{
+    //[UIComponentService showSuccessHudWithStatus:message];
+    [self performSegueWithIdentifier:@"reChangeSegue" sender:self];
+}
+
+-(void)payMoneyRequestFeildWithMessage:(NSString *)message
+{
+    if([_payPhoneMoneyDo.responeCode isEqualToString:@"000088"])
+    {
+        return;
+    }
+    
+    [UIComponentService showFailHudWithStatus:message];
+}
+
+@end

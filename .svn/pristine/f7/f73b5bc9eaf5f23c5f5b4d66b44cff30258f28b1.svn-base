@@ -1,0 +1,240 @@
+//
+//  AppDelegate.m
+//  BusinessPay
+//
+//  Created by Tears on 14-4-1.
+//  Copyright (c) 2014年 Tears. All rights reserved.
+//
+
+#import "AppDelegate.h"
+#import "LockViewController.h"
+#import "PayViewController.h"
+#import "LLLockViewController.h"
+#import "RealNameVerificationViewController.h"
+#import "DataBase.h"
+
+
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+{
+
+    
+    UIImageView * imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, kSCREEN_WIDTH, 100)];
+    imageView.image = [UIImage imageNamed:@"titleNew.png"];
+    [self.window addSubview:imageView];
+    
+    [[UINavigationBar appearance] setBackgroundImage:[UIImage imageNamed:@"title"] forBarMetrics:UIBarMetricsDefault];
+    [[UINavigationBar appearance] setTintColor:[UIColor colorWithRed:225/255.f green:225/255.f blue:225/255.f alpha:1]];
+    
+    
+    // iOS8 下需要使⽤用新的 API
+    if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 8.0) {
+        UIUserNotificationType myTypes = UIUserNotificationTypeBadge | UIUserNotificationTypeSound
+        | UIUserNotificationTypeAlert;
+        UIUserNotificationSettings *settings = [UIUserNotificationSettings settingsForTypes:myTypes
+                                                                                 categories:nil];
+        [[UIApplication sharedApplication] registerUserNotificationSettings:settings];
+        
+    }else {
+        UIRemoteNotificationType myTypes = UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeAlert|UIRemoteNotificationTypeSound;
+        [[UIApplication sharedApplication] registerForRemoteNotificationTypes:myTypes];
+    }
+     //#warning 上线 AppStore 时需要修改 pushMode
+    // 在 App 启动时注册百度云推送服务,需要提供 Apikey
+    [BPush registerChannel:launchOptions apiKey:@"fr3Gtub7cEGREfi71lGRO9k3" pushMode:BPushModeDevelopment isDebug:NO];
+    // 设置 BPush 的回调
+    [BPush setDelegate:self];
+    // App 是用户点击推送消息启动
+    NSDictionary *userInfo = [launchOptions objectForKey:UIApplicationLaunchOptionsRemoteNotificationKey];
+    if (userInfo) {
+        [BPush handleNotification:userInfo];
+    }
+    
+    return YES;
+}
+
+
+
+
+- (void)application:(UIApplication *)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings
+{
+    [application registerForRemoteNotifications];
+}
+
+
+-(void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
+{
+    [BPush registerDeviceToken:deviceToken];       //注册deviceToken
+    
+    [BPush bindChannel];                          // 绑定
+}
+
+
+
+-(void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo{
+   
+    NSLog(@"userInfo==%@",userInfo);
+    
+    NSData *jsonData=[[userInfo objectForKey:@"aps"] objectForKey:@"alert"] ;
+    NSLog(@"数据=%@",jsonData);
+    
+    NSString *push_type=[userInfo objectForKey:@"push_type"];
+    NSLog(@"push_type=%@",push_type);
+    
+    NSString *business_type=[userInfo objectForKey:@"business_type"];
+    NSLog(@"business_type = %@",business_type);
+    
+    NSString *mark_status=[userInfo objectForKey:@"mark_status"];
+    
+    NSLog(@"mark_stutas=%@",mark_status);
+    
+    
+    UIViewController * testVC = [self topViewController];
+    //NSLog(@"testVC   ===   %@",testVC);
+        if (![testVC isKindOfClass:[RealNameVerificationViewController class]]) {
+            UIStoryboard *mainStoryboard = [UIStoryboard storyboardWithName:@"Main_iPhone" bundle: nil];
+            RealNameVerificationViewController * presentVC =(RealNameVerificationViewController *)[mainStoryboard instantiateViewControllerWithIdentifier:@"realNameVerificationSegue"];
+            
+            CATransition *animation = [CATransition animation];
+            animation.duration = 0.05f;
+            animation.timingFunction = UIViewAnimationCurveEaseInOut;
+            animation.type = @"rippleEffect";
+            animation.subtype = kCATransitionFromLeft;
+            [testVC.view.window.layer addAnimation:animation forKey:nil];
+            //[testVC presentViewController:presentVC animated:NO completion:nil];
+            [testVC.navigationController pushViewController:presentVC animated:YES];
+        };
+//        LLLockViewController *lockVC=[[LLLockViewController alloc] init];
+//        
+//        [[[[UIApplication sharedApplication] keyWindow] rootViewController] presentViewController:lockVC animated:YES completion:^(void){}];
+    
+    
+}
+
+-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if (buttonIndex==1) {
+        
+    }
+}
+
+
+-(void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
+{
+    NSLog(@"DeviceToken 获取失败，原因  %@",error);
+    
+}
+
+
+#pragma mark - bPushDelegate
+
+-(void)onMethod:(NSString *)method response:(NSDictionary *)data
+{
+    [User shareUser].appChannelID=[data objectForKey:@"channel_id"];
+    [User shareUser].appUserID=[data objectForKey:@"user_id"];
+    
+  NSLog(@"userid=%@,channelID=%@",[User shareUser].appUserID,[User shareUser].appChannelID);
+    
+}
+
+
+
+- (void)applicationWillResignActive:(UIApplication *)application
+{
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    [userDefaults setObject:[self timeNowString] forKey:@"out"];
+    [userDefaults synchronize];
+}
+
+- (NSString *)timeNowString
+{
+    NSDate * now = [NSDate date];
+    NSDateFormatter* dateformatter = [[NSDateFormatter alloc] init];
+    dateformatter.dateFormat = @"yyyy-MM-dd HH:mm";
+    NSString* dateString = [dateformatter stringFromDate:now];
+    return dateString;
+}
+
+- (BOOL)compareTime
+{
+    NSString * inStr = [self timeNowString];
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    NSString * outStr = [userDefaults objectForKey:@"out"];
+    NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm"];
+    NSDate *date1=[dateFormatter dateFromString:outStr];
+    NSDate *date2=[dateFormatter dateFromString:inStr];
+    NSTimeInterval time=[date2 timeIntervalSinceDate:date1];
+    int minter = time/1800;
+    if (minter >= 1) {
+        return YES;
+    } else {
+        return NO;
+    }
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application
+{
+    
+        UIViewController * testVC = [self topViewController];
+    //NSLog(@"testVC   ===   %@",testVC);
+    if ([[User shareUser].identity isEqualToString:@"1"]) {
+        return;
+    }else{
+        if (![testVC isKindOfClass:[LLLockViewController class]]) {
+            UIStoryboard *mainStoryboard = [UIStoryboard storyboardWithName:@"Main_iPhone" bundle: nil];
+            LLLockViewController * presentVC =(LLLockViewController *)[mainStoryboard instantiateViewControllerWithIdentifier:@"gestureToTabSegue"];
+    
+            CATransition *animation = [CATransition animation];
+            animation.duration = 0.05f;
+            animation.timingFunction = UIViewAnimationCurveEaseInOut;
+            animation.type = @"rippleEffect";
+            animation.subtype = kCATransitionFromLeft;
+            [testVC.view.window.layer addAnimation:animation forKey:nil];
+            [testVC presentViewController:presentVC animated:NO completion:nil];
+    
+    };
+//    LLLockViewController *lockVC=[[LLLockViewController alloc] init];
+//    
+//    [[[[UIApplication sharedApplication] keyWindow] rootViewController] presentViewController:lockVC animated:YES completion:^(void){}];
+    }
+    
+}
+
+- (UIViewController *)topViewController{
+    return [self topViewController:[UIApplication sharedApplication].keyWindow.rootViewController];
+}
+
+- (UIViewController *)topViewController:(UIViewController *)rootViewController
+{
+    if (rootViewController.presentedViewController == nil) {
+        return rootViewController;
+    }
+    
+    if ([rootViewController.presentedViewController isMemberOfClass:[UINavigationController class]]) {
+        UINavigationController *navigationController = (UINavigationController *)rootViewController.presentedViewController;
+        UIViewController *lastViewController = [[navigationController viewControllers] lastObject];
+        return [self topViewController:lastViewController];
+    }
+    
+    UIViewController *presentedViewController = (UIViewController *)rootViewController.presentedViewController;
+    return [self topViewController:presentedViewController];
+}
+
+- (void)applicationDidEnterBackground:(UIApplication *)application
+{
+    
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application
+{
+    // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application
+{
+    // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+}
+
+@end

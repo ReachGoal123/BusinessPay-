@@ -1,0 +1,13 @@
+//
+//  IntroduceViewController.h
+//  BusinessPay
+//
+//  Created by SHANGYITONG on 15-3-3.
+//  Copyright (c) 2015年 Tears. All rights reserved.
+//
+
+#import "BaseViewController.h"
+
+@interface IntroduceViewController : BaseViewController
+
+@end
